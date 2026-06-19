@@ -98,35 +98,35 @@ export default function AdminLayout({ onLogout }: Props) {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#060E1A', display:'flex', fontFamily:"'Cairo',sans-serif", direction:'rtl', color:'#E2E8F4', minWidth:1280 }}>
+    <div style={{ minHeight:'100vh', background:'#F0F4F8', display:'flex', fontFamily:"'Cairo',sans-serif", direction:'rtl', color:'#1E293B', minWidth:1280 }}>
       {/* Sidebar */}
       <aside style={{
         width: collapsed ? 64 : 220,
-        background:'#0A1628', borderLeft:'1px solid #1A2E4A',
+        background:'#FFFFFF', borderLeft:'1px solid #E2E8F0',
         display:'flex', flexDirection:'column', transition:'width 0.25s ease',
         flexShrink:0, zIndex:100, height:'100vh', position:'sticky', top:0, overflowX:'hidden',
       }}>
         {/* Logo */}
-        <div style={{ padding:'0 12px', height:60, borderBottom:'1px solid #1A2E4A', display:'flex', alignItems:'center', justifyContent:'space-between', overflow:'hidden' }}>
+        <div style={{ padding:'0 12px', height:60, borderBottom:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'space-between', overflow:'hidden' }}>
           {!collapsed && (
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#C9A84C,#8B6914)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', flexShrink:0 }}>⚡</div>
+              <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#0EA5E9,#0284C7)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', flexShrink:0 }}>⚡</div>
               <div>
-                <div style={{ fontSize:'0.8rem', fontWeight:800, color:'#E2E8F4', whiteSpace:'nowrap' }}>Golden Horizon</div>
-                <div style={{ fontSize:'0.6rem', color:'#C9A84C', whiteSpace:'nowrap' }}>Admin Panel</div>
+                <div style={{ fontSize:'0.8rem', fontWeight:800, color:'#1E293B', whiteSpace:'nowrap' }}>Golden Horizon</div>
+                <div style={{ fontSize:'0.6rem', color:'#0EA5E9', whiteSpace:'nowrap' }}>Admin Panel</div>
               </div>
             </div>
           )}
-          {collapsed && <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#C9A84C,#8B6914)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', margin:'0 auto' }}>⚡</div>}
+          {collapsed && <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#0EA5E9,#0284C7)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1rem', margin:'0 auto' }}>⚡</div>}
           {!collapsed && (
-            <button onClick={()=>setCollapsed(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#4A6080', padding:4, display:'flex' }}>
+            <button onClick={()=>setCollapsed(true)} style={{ background:'none', border:'none', cursor:'pointer', color:'#94A3B8', padding:4, display:'flex' }}>
               <ChevronRight size={15} />
             </button>
           )}
         </div>
 
         {collapsed && (
-          <button onClick={()=>setCollapsed(false)} style={{ margin:'8px 10px', background:'none', border:'1px solid #1A2E4A', borderRadius:6, cursor:'pointer', color:'#6B84A8', display:'flex', alignItems:'center', justifyContent:'center', padding:6 }}>
+          <button onClick={()=>setCollapsed(false)} style={{ margin:'8px 10px', background:'none', border:'1px solid #E2E8F0', borderRadius:6, cursor:'pointer', color:'#64748B', display:'flex', alignItems:'center', justifyContent:'center', padding:6 }}>
             <Menu size={15} />
           </button>
         )}
@@ -136,7 +136,7 @@ export default function AdminLayout({ onLogout }: Props) {
           {navGroups.map(group => (
             <div key={group.title} style={{ marginBottom:2 }}>
               {!collapsed && (
-                <div style={{ fontSize:'0.58rem', fontWeight:700, color:'#3A5070', letterSpacing:'1.5px', textTransform:'uppercase', padding:'8px 14px 4px' }}>
+                <div style={{ fontSize:'0.58rem', fontWeight:700, color:'#94A3B8', letterSpacing:'1.5px', textTransform:'uppercase', padding:'8px 14px 4px' }}>
                   {group.title}
                 </div>
               )}
@@ -150,17 +150,17 @@ export default function AdminLayout({ onLogout }: Props) {
                     style={{
                       width:'100%', display:'flex', alignItems:'center', gap:9,
                       padding: collapsed ? '9px 0' : '9px 14px',
-                      background: isActive ? 'rgba(201,168,76,0.1)' : 'transparent',
+                      background: isActive ? 'rgba(14,165,233,0.1)' : 'transparent',
                       border:'none', borderRight: isActive ? '2px solid #C9A84C' : '2px solid transparent',
                       borderLeft:'none', cursor:'pointer',
-                      color: isActive ? '#C9A84C' : '#7A9AB8',
+                      color: isActive ? '#0EA5E9' : '#475569',
                       fontSize:'0.82rem', fontWeight: isActive ? 700 : 400,
                       fontFamily:"'Cairo',sans-serif", transition:'all 0.15s',
                       textAlign:'right', justifyContent: collapsed ? 'center' : 'flex-start',
                       position:'relative',
                     }}
-                    onMouseEnter={e=>{if(!isActive){e.currentTarget.style.color='#C9A84C';e.currentTarget.style.background='rgba(201,168,76,0.05)'}}}
-                    onMouseLeave={e=>{if(!isActive){e.currentTarget.style.color='#7A9AB8';e.currentTarget.style.background='transparent'}}}>
+                    onMouseEnter={e=>{if(!isActive){e.currentTarget.style.color='#0EA5E9';e.currentTarget.style.background='rgba(14,165,233,0.05)'}}}
+                    onMouseLeave={e=>{if(!isActive){e.currentTarget.style.color='#475569';e.currentTarget.style.background='transparent'}}}>
                     <Icon size={16} style={{ flexShrink:0 }} />
                     {!collapsed && <>
                       <span style={{ flex:1, whiteSpace:'nowrap' }}>{item.label}</span>
@@ -174,29 +174,29 @@ export default function AdminLayout({ onLogout }: Props) {
                   </button>
                 )
               })}
-              {!collapsed && <div style={{ height:1, background:'rgba(26,46,74,0.3)', margin:'4px 12px' }} />}
+              {!collapsed && <div style={{ height:1, background:'rgba(203,213,225,0.5)', margin:'4px 12px' }} />}
             </div>
           ))}
         </nav>
 
         {/* User */}
-        <div style={{ padding:'10px 8px', borderTop:'1px solid #1A2E4A', position:'relative' }}>
+        <div style={{ padding:'10px 8px', borderTop:'1px solid #E2E8F0', position:'relative' }}>
           <button onClick={()=>setShowUserMenu(!showUserMenu)}
-            style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:8, background:'rgba(201,168,76,0.06)', border:'1px solid rgba(201,168,76,0.15)', borderRadius:8, cursor:'pointer', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-            <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#C9A84C,#E8C96A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:800, color:'#060E1A', flexShrink:0 }}>أ</div>
+            style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:8, background:'rgba(14,165,233,0.06)', border:'1px solid rgba(14,165,233,0.15)', borderRadius:8, cursor:'pointer', justifyContent: collapsed ? 'center' : 'flex-start' }}>
+            <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#0EA5E9,#38BDF8)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:800, color:'#FFFFFF', flexShrink:0 }}>أ</div>
             {!collapsed && <div style={{ flex:1, textAlign:'right' }}>
-              <div style={{ fontSize:'0.75rem', fontWeight:700, color:'#E2E8F4', whiteSpace:'nowrap' }}>أحمد المشرف</div>
-              <div style={{ fontSize:'0.58rem', color:'#C9A84C' }}>Super Admin</div>
+              <div style={{ fontSize:'0.75rem', fontWeight:700, color:'#1E293B', whiteSpace:'nowrap' }}>أحمد المشرف</div>
+              <div style={{ fontSize:'0.58rem', color:'#0EA5E9' }}>Super Admin</div>
             </div>}
           </button>
           {showUserMenu && !collapsed && (
-            <div style={{ position:'absolute', bottom:'100%', right:8, left:8, marginBottom:4, background:'#111E33', border:'1px solid #1A2E4A', borderRadius:8, overflow:'hidden', zIndex:200 }}>
-              <button onClick={()=>{setPage('settings');setShowUserMenu(false)}} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#E2E8F4', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(201,168,76,0.08)'}
+            <div style={{ position:'absolute', bottom:'100%', right:8, left:8, marginBottom:4, background:'#FFFFFF', border:'1px solid #E2E8F0', borderRadius:8, overflow:'hidden', zIndex:200 }}>
+              <button onClick={()=>{setPage('settings');setShowUserMenu(false)}} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#1E293B', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.08)'}
                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                <Settings size={13} color="#6B84A8" /> الإعدادات
+                <Settings size={13} color="#64748B" /> الإعدادات
               </button>
-              <div style={{ height:1, background:'#1A2E4A' }} />
+              <div style={{ height:1, background:'#CBD5E1' }} />
               <button onClick={onLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#FF4560', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
                 onMouseEnter={e=>e.currentTarget.style.background='rgba(255,69,96,0.08)'}
                 onMouseLeave={e=>e.currentTarget.style.background='none'}>
@@ -210,18 +210,18 @@ export default function AdminLayout({ onLogout }: Props) {
       {/* Main */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', minWidth:0 }}>
         {/* Topbar */}
-        <header style={{ height:60, background:'#0A1628', borderBottom:'1px solid #1A2E4A', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', position:'sticky', top:0, zIndex:90, gap:12 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:'0.8rem', color:'#6B84A8' }}>
+        <header style={{ height:60, background:'#FFFFFF', borderBottom:'1px solid #E2E8F0', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 20px', position:'sticky', top:0, zIndex:90, gap:12 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:'0.8rem', color:'#64748B' }}>
             <span>Golden Horizon</span>
             <ChevronRight size={12} />
-            <span style={{ color:'#E2E8F4', fontWeight:600 }}>{pageTitles[page]}</span>
+            <span style={{ color:'#1E293B', fontWeight:600 }}>{pageTitles[page]}</span>
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, maxWidth:360 }}>
-            <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#060E1A', border:'1px solid #1A2E4A', borderRadius:8, padding:'7px 12px', fontSize:'0.78rem', color:'#6B84A8' }}>
+            <div style={{ flex:1, display:'flex', alignItems:'center', gap:8, background:'#F1F5F9', border:'1px solid #E2E8F0', borderRadius:8, padding:'7px 12px', fontSize:'0.78rem', color:'#64748B' }}>
               <Search size={13} />
-              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث..." style={{ background:'none', border:'none', outline:'none', color:'#E2E8F4', fontSize:'0.78rem', fontFamily:"'Cairo',sans-serif", flex:1, minWidth:0 }} />
-              <kbd style={{ background:'#1A2E4A', borderRadius:3, padding:'1px 5px', fontSize:'0.65rem', color:'#4A6080', flexShrink:0 }}>⌘K</kbd>
+              <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث..." style={{ background:'none', border:'none', outline:'none', color:'#1E293B', fontSize:'0.78rem', fontFamily:"'Cairo',sans-serif", flex:1, minWidth:0 }} />
+              <kbd style={{ background:'#CBD5E1', borderRadius:3, padding:'1px 5px', fontSize:'0.65rem', color:'#94A3B8', flexShrink:0 }}>⌘K</kbd>
             </div>
           </div>
 
@@ -231,29 +231,29 @@ export default function AdminLayout({ onLogout }: Props) {
               مباشر
             </div>
             <div style={{ position:'relative' }}>
-              <button onClick={()=>setShowNotif(!showNotif)} style={{ width:36, height:36, background: showNotif ? 'rgba(201,168,76,0.1)' : '#060E1A', border:`1px solid ${showNotif ? 'rgba(201,168,76,0.3)' : '#1A2E4A'}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#6B84A8', position:'relative' }}>
+              <button onClick={()=>setShowNotif(!showNotif)} style={{ width:36, height:36, background: showNotif ? 'rgba(14,165,233,0.1)' : '#F1F5F9', border:`1px solid ${showNotif ? 'rgba(14,165,233,0.3)' : '#E2E8F0'}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#64748B', position:'relative' }}>
                 <Bell size={15} />
                 {unread > 0 && <span style={{ position:'absolute', top:5, left:5, width:7, height:7, background:'#FF4560', border:'2px solid #0A1628', borderRadius:'50%' }} />}
               </button>
               {showNotif && (
-                <div style={{ position:'absolute', top:'100%', left:0, marginTop:8, width:320, background:'#111E33', border:'1px solid #1A2E4A', borderRadius:12, boxShadow:'0 20px 50px rgba(0,0,0,0.5)', zIndex:200, overflow:'hidden' }}>
-                  <div style={{ padding:'12px 14px', borderBottom:'1px solid #1A2E4A', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <div style={{ position:'absolute', top:'100%', left:0, marginTop:8, width:320, background:'#FFFFFF', border:'1px solid #E2E8F0', borderRadius:12, boxShadow:'0 8px 30px rgba(0,0,0,0.12)', zIndex:200, overflow:'hidden' }}>
+                  <div style={{ padding:'12px 14px', borderBottom:'1px solid #E2E8F0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                     <span style={{ fontWeight:700, fontSize:'0.85rem' }}>الإشعارات</span>
-                    <span style={{ fontSize:'0.7rem', color:'#C9A84C', cursor:'pointer' }}>تعليم الكل مقروء</span>
+                    <span style={{ fontSize:'0.7rem', color:'#0EA5E9', cursor:'pointer' }}>تعليم الكل مقروء</span>
                   </div>
                   {mockNotifications.slice(0,5).map(n => (
-                    <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 14px', borderBottom:'1px solid rgba(26,46,74,0.3)', cursor:'pointer', background: !n.read ? 'rgba(201,168,76,0.03)' : 'transparent' }}
-                      onMouseEnter={e=>e.currentTarget.style.background='rgba(201,168,76,0.06)'}
-                      onMouseLeave={e=>e.currentTarget.style.background=!n.read?'rgba(201,168,76,0.03)':'transparent'}>
+                    <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 14px', borderBottom:'1px solid rgba(203,213,225,0.5)', cursor:'pointer', background: !n.read ? 'rgba(14,165,233,0.03)' : 'transparent' }}
+                      onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.06)'}
+                      onMouseLeave={e=>e.currentTarget.style.background=!n.read?'rgba(14,165,233,0.03)':'transparent'}>
                       <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{n.icon}</span>
                       <div style={{ flex:1 }}>
-                        <div style={{ fontSize:'0.78rem', fontWeight:600, color:'#E2E8F4' }}>{n.title}</div>
-                        <div style={{ fontSize:'0.7rem', color:'#6B84A8', marginTop:2 }}>{n.desc}</div>
+                        <div style={{ fontSize:'0.78rem', fontWeight:600, color:'#1E293B' }}>{n.title}</div>
+                        <div style={{ fontSize:'0.7rem', color:'#64748B', marginTop:2 }}>{n.desc}</div>
                       </div>
-                      <div style={{ fontSize:'0.65rem', color:'#4A6080', flexShrink:0 }}>{n.time}</div>
+                      <div style={{ fontSize:'0.65rem', color:'#94A3B8', flexShrink:0 }}>{n.time}</div>
                     </div>
                   ))}
-                  <button onClick={()=>{setPage('notifications');setShowNotif(false)}} style={{ width:'100%', padding:'10px', background:'none', border:'none', color:'#C9A84C', fontSize:'0.78rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", borderTop:'1px solid #1A2E4A' }}>
+                  <button onClick={()=>{setPage('notifications');setShowNotif(false)}} style={{ width:'100%', padding:'10px', background:'none', border:'none', color:'#0EA5E9', fontSize:'0.78rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", borderTop:'1px solid #E2E8F0' }}>
                     عرض الكل
                   </button>
                 </div>
@@ -272,7 +272,7 @@ export default function AdminLayout({ onLogout }: Props) {
         @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
         ::-webkit-scrollbar { width:4px; height:4px }
         ::-webkit-scrollbar-track { background:transparent }
-        ::-webkit-scrollbar-thumb { background:#1A2E4A; border-radius:4px }
+        ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:4px }
       `}</style>
     </div>
   )
