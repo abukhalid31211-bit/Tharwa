@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Plus, Edit, Trash2, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Eye } from 'lucide-react'
 import { mockFAQs, mockFAQCategories } from '../adminData'
 
-const S = { bg:'#060E1A',card:'#0C1A2E',border:'#1A2E4A',gold:'#C9A84C',text:'#E2E8F4',muted:'#6B84A8',green:'#00D97E',red:'#FF4560' }
+const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
 type FAQ = typeof mockFAQs[0]
 type Cat = typeof mockFAQCategories[0]
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
-  return <div onClick={()=>onChange(!on)} style={{width:36,height:19,borderRadius:20,background:on?S.gold:'#1A2E4A',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
+  return <div onClick={()=>onChange(!on)} style={{width:36,height:19,borderRadius:20,background:on?S.gold:'#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
     <div style={{position:'absolute',top:2,left:on?'auto':2,right:on?2:'auto',width:15,height:15,borderRadius:'50%',background:'white',transition:'all 0.3s'}}/>
   </div>
 }
@@ -55,7 +55,10 @@ export default function FAQManager() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {saved && <span style={{fontSize:'0.75rem',color:S.green}}>✓ تم الحفظ</span>}
-          <button onClick={openNew} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+          <button onClick={()=>window.open('/faq','_blank')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.3)',borderRadius:8,color:'#0EA5E9',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+            <Eye size={13}/> معاينة
+          </button>
+          <button onClick={openNew} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
             <Plus size={14}/> سؤال جديد
           </button>
         </div>
@@ -86,9 +89,9 @@ export default function FAQManager() {
         <>
           {/* Category Filter */}
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            <button onClick={()=>setCatFilter(0)} style={{padding:'6px 14px',background:catFilter===0?`rgba(201,168,76,0.12)`:'transparent',border:`1px solid ${catFilter===0?'rgba(201,168,76,0.3)':S.border}`,borderRadius:20,color:catFilter===0?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>الكل</button>
+            <button onClick={()=>setCatFilter(0)} style={{padding:'6px 14px',background:catFilter===0?`rgba(14,165,233,0.12)`:'transparent',border:`1px solid ${catFilter===0?'rgba(14,165,233,0.3)':S.border}`,borderRadius:20,color:catFilter===0?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>الكل</button>
             {cats.map(c=>(
-              <button key={c.id} onClick={()=>setCatFilter(c.id)} style={{padding:'6px 14px',background:catFilter===c.id?`rgba(201,168,76,0.12)`:'transparent',border:`1px solid ${catFilter===c.id?'rgba(201,168,76,0.3)':S.border}`,borderRadius:20,color:catFilter===c.id?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+              <button key={c.id} onClick={()=>setCatFilter(c.id)} style={{padding:'6px 14px',background:catFilter===c.id?`rgba(14,165,233,0.12)`:'transparent',border:`1px solid ${catFilter===c.id?'rgba(14,165,233,0.3)':S.border}`,borderRadius:20,color:catFilter===c.id?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
                 {c.name} <span style={{color:S.muted,fontFamily:'monospace',fontSize:'0.7rem'}}>({faqs.filter(f=>f.categoryId===c.id).length})</span>
               </button>
             ))}
@@ -97,18 +100,18 @@ export default function FAQManager() {
           {/* FAQ List (Accordion) */}
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {filtered.map(faq=>(
-              <div key={faq.id} style={{background:S.card,border:`1px solid ${faq.visible?S.border:'rgba(26,46,74,0.4)'}`,borderRadius:12,overflow:'hidden',opacity:faq.visible?1:0.6}}>
+              <div key={faq.id} style={{background:S.card,border:`1px solid ${faq.visible?S.border:'rgba(203,213,225,0.6)'}`,borderRadius:12,overflow:'hidden',opacity:faq.visible?1:0.6}}>
                 <div style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}
                   onClick={()=>setExpanded(expanded===faq.id?null:faq.id)}>
-                  <div style={{width:28,height:28,borderRadius:8,background:`rgba(201,168,76,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.75rem',color:S.gold,fontWeight:800,flexShrink:0}}>
+                  <div style={{width:28,height:28,borderRadius:8,background:`rgba(14,165,233,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.75rem',color:S.gold,fontWeight:800,flexShrink:0}}>
                     {faq.order}
                   </div>
                   <span style={{flex:1,fontSize:'0.85rem',fontWeight:600,color:S.text}}>{faq.question||'(بدون سؤال)'}</span>
-                  <span style={{fontSize:'0.65rem',color:S.muted,background:'rgba(26,46,74,0.6)',padding:'2px 8px',borderRadius:20}}>
+                  <span style={{fontSize:'0.65rem',color:S.muted,background:'rgba(203,213,225,0.8)',padding:'2px 8px',borderRadius:20}}>
                     {cats.find(c=>c.id===faq.categoryId)?.name||'—'}
                   </span>
                   <div style={{display:'flex',gap:4,alignItems:'center'}}>
-                    <button onClick={e=>{e.stopPropagation();setEditing({...faq});setIsNew(false)}} style={{width:26,height:26,background:`rgba(201,168,76,0.1)`,border:`1px solid rgba(201,168,76,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
+                    <button onClick={e=>{e.stopPropagation();setEditing({...faq});setIsNew(false)}} style={{width:26,height:26,background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
                     <button onClick={e=>{e.stopPropagation();toggleFAQ(faq.id)}} style={{width:26,height:26,background:`rgba(107,132,168,0.1)`,border:`1px solid rgba(107,132,168,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.muted}}>
                       <Toggle on={faq.visible} onChange={()=>{}}/>
                     </button>
@@ -117,7 +120,7 @@ export default function FAQManager() {
                   </div>
                 </div>
                 {expanded===faq.id && (
-                  <div style={{padding:'0 16px 14px',borderTop:`1px solid rgba(26,46,74,0.4)`}}>
+                  <div style={{padding:'0 16px 14px',borderTop:`1px solid rgba(203,213,225,0.6)`}}>
                     <p style={{fontSize:'0.8rem',color:S.muted,lineHeight:1.8,margin:'12px 0 0'}}>{faq.answer}</p>
                   </div>
                 )}
@@ -136,13 +139,13 @@ export default function FAQManager() {
                 placeholder="اسم القسم..."
                 style={{flex:1,padding:'9px 12px',background:S.bg,border:`1px solid ${S.border}`,borderRadius:8,color:S.text,fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",outline:'none'}}
                 onFocus={e=>e.currentTarget.style.borderColor=S.gold} onBlur={e=>e.currentTarget.style.borderColor=S.border}/>
-              <button onClick={addCat} style={{padding:'9px 18px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:700,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>إضافة</button>
+              <button onClick={addCat} style={{padding:'9px 18px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>إضافة</button>
             </div>
           </div>
 
           {cats.map((c,i)=>(
             <div key={c.id} style={{background:S.card,border:`1px solid ${S.border}`,borderRadius:12,padding:'12px 16px',display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:28,height:28,borderRadius:8,background:`rgba(201,168,76,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.78rem',color:S.gold,fontWeight:800}}>{i+1}</div>
+              <div style={{width:28,height:28,borderRadius:8,background:`rgba(14,165,233,0.1)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.78rem',color:S.gold,fontWeight:800}}>{i+1}</div>
               <span style={{fontSize:'0.85rem',fontWeight:600,color:S.text,flex:1}}>{c.name}</span>
               <span style={{fontSize:'0.72rem',color:S.muted}}>{faqs.filter(f=>f.categoryId===c.id).length} سؤال</span>
               <Toggle on={c.visible} onChange={v=>setCats(prev=>prev.map(x=>x.id===c.id?{...x,visible:v}:x))}/>
@@ -154,8 +157,8 @@ export default function FAQManager() {
 
       {/* FAQ Edit Modal */}
       {editing && (
-        <div style={{position:'fixed',inset:0,background:'rgba(6,14,26,0.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
-          <div style={{background:'#0A1628',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:580}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
+          <div style={{background:'#FFFFFF',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:580}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:'16px 20px',borderBottom:`1px solid ${S.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <span style={{fontWeight:700,color:S.text}}>{isNew?'سؤال جديد':'تعديل السؤال'}</span>
               <button onClick={()=>setEditing(null)} style={{background:'none',border:'none',cursor:'pointer',color:S.muted,display:'flex'}}><X size={18}/></button>
@@ -185,7 +188,7 @@ export default function FAQManager() {
                 <span style={{fontSize:'0.82rem',color:S.text}}>إظهار السؤال في الموقع</span>
                 <Toggle on={editing.visible} onChange={v=>setEditing({...editing,visible:v})}/>
               </div>
-              <button onClick={()=>saveFAQ(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
+              <button onClick={()=>saveFAQ(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
                 💾 حفظ السؤال
               </button>
             </div>
