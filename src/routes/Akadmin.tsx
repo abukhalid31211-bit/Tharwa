@@ -22,7 +22,7 @@ function AkadminPage() {
   const handleLogin = () => setAuthed(true)
   const handleLogout = () => { localStorage.removeItem('admin_auth'); setAuthed(false) }
 
-  if (authed === null) return <div style={{ minHeight: '100vh', background: '#060E1A' }} />
+  if (authed === null) return <div style={{ minHeight: '100vh', background: '#F0F4F8' }} />
 
   return authed
     ? <AdminLayout onLogout={handleLogout} />
