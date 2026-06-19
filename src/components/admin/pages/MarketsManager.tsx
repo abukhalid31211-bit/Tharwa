@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Plus, Edit, Trash2, X, TrendingUp, TrendingDown } from 'lucide-react'
+import { Plus, Edit, Trash2, X, TrendingUp, TrendingDown, Eye } from 'lucide-react'
 import { mockMarketAssets, mockTickerItems, mockMarketCategories } from '../adminData'
 
-const S = { bg:'#060E1A',card:'#0C1A2E',border:'#1A2E4A',gold:'#C9A84C',text:'#E2E8F4',muted:'#6B84A8',green:'#00D97E',red:'#FF4560' }
+const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
 type Asset = typeof mockMarketAssets[0]
 type Ticker = typeof mockTickerItems[0]
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
-  return <div onClick={()=>onChange(!on)} style={{width:36,height:19,borderRadius:20,background:on?S.gold:'#1A2E4A',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
+  return <div onClick={()=>onChange(!on)} style={{width:36,height:19,borderRadius:20,background:on?S.gold:'#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
     <div style={{position:'absolute',top:2,left:on?'auto':2,right:on?2:'auto',width:15,height:15,borderRadius:'50%',background:'white',transition:'all 0.3s'}}/>
   </div>
 }
@@ -60,15 +60,18 @@ export default function MarketsManager() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {saved && <span style={{fontSize:'0.75rem',color:S.green}}>✓ تم الحفظ</span>}
+          <button onClick={()=>window.open('/markets','_blank')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.3)',borderRadius:8,color:'#0EA5E9',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+            <Eye size={13}/> معاينة
+          </button>
           {tab==='assets' && (
             <button onClick={()=>setEditing({id:Date.now(),category:categories[0]?.name||'الأسهم',name:'',symbol:'',price:'',change:0,volume:'',marketCap:'',visible:true,order:assets.length+1})}
-              style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+              style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
               <Plus size={14}/> أصل جديد
             </button>
           )}
           {tab==='ticker' && (
             <button onClick={()=>setTickers([...tickers,{id:Date.now(),symbol:'NEW',price:'0',change:0,dir:'up',visible:true,order:tickers.length+1}])}
-              style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+              style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
               <Plus size={14}/> إضافة للشريط
             </button>
           )}
@@ -87,7 +90,7 @@ export default function MarketsManager() {
           {/* Cat filter */}
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
             {cats.map(c=>(
-              <button key={c} onClick={()=>setCatFilter(c)} style={{padding:'6px 14px',background:catFilter===c?`rgba(201,168,76,0.12)`:'transparent',border:`1px solid ${catFilter===c?'rgba(201,168,76,0.3)':S.border}`,borderRadius:20,color:catFilter===c?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>{c}</button>
+              <button key={c} onClick={()=>setCatFilter(c)} style={{padding:'6px 14px',background:catFilter===c?`rgba(14,165,233,0.12)`:'transparent',border:`1px solid ${catFilter===c?'rgba(14,165,233,0.3)':S.border}`,borderRadius:20,color:catFilter===c?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>{c}</button>
             ))}
           </div>
 
@@ -102,29 +105,29 @@ export default function MarketsManager() {
                 <tbody>
                   {filtered.map(a=>(
                     <tr key={a.id} style={{opacity:a.visible?1:0.5}}
-                      onMouseEnter={e=>e.currentTarget.style.background='rgba(201,168,76,0.02)'}
+                      onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.02)'}
                       onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                      <td style={{padding:'10px 14px',fontSize:'0.8rem',fontWeight:600,color:S.text,borderBottom:`1px solid rgba(26,46,74,0.4)`}}>{a.name}</td>
-                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                      <td style={{padding:'10px 14px',fontSize:'0.8rem',fontWeight:600,color:S.text,borderBottom:`1px solid rgba(203,213,225,0.6)`}}>{a.name}</td>
+                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                         <span style={{background:'rgba(59,130,246,0.1)',color:'#3B82F6',borderRadius:6,padding:'2px 8px',fontSize:'0.68rem',fontFamily:'monospace',fontWeight:700}}>{a.symbol}</span>
                       </td>
-                      <td style={{padding:'10px 14px',fontSize:'0.78rem',fontFamily:'monospace',color:S.text,borderBottom:`1px solid rgba(26,46,74,0.4)`}}>{a.price}</td>
-                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                      <td style={{padding:'10px 14px',fontSize:'0.78rem',fontFamily:'monospace',color:S.text,borderBottom:`1px solid rgba(203,213,225,0.6)`}}>{a.price}</td>
+                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                         <span style={{display:'flex',alignItems:'center',gap:4,fontSize:'0.78rem',fontWeight:700,color:a.change>=0?S.green:S.red}}>
                           {a.change>=0?<TrendingUp size={12}/>:<TrendingDown size={12}/>}
                           {a.change>=0?'+':''}{a.change}%
                         </span>
                       </td>
-                      <td style={{padding:'10px 14px',fontSize:'0.72rem',color:S.muted,borderBottom:`1px solid rgba(26,46,74,0.4)`,fontFamily:'monospace'}}>{a.volume}</td>
-                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
-                        <span style={{background:'rgba(26,46,74,0.6)',color:S.muted,borderRadius:5,padding:'2px 8px',fontSize:'0.65rem'}}>{a.category}</span>
+                      <td style={{padding:'10px 14px',fontSize:'0.72rem',color:S.muted,borderBottom:`1px solid rgba(203,213,225,0.6)`,fontFamily:'monospace'}}>{a.volume}</td>
+                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
+                        <span style={{background:'rgba(203,213,225,0.8)',color:S.muted,borderRadius:5,padding:'2px 8px',fontSize:'0.65rem'}}>{a.category}</span>
                       </td>
-                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                         <Toggle on={a.visible} onChange={()=>toggleAsset(a.id)}/>
                       </td>
-                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                      <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                         <div style={{display:'flex',gap:4}}>
-                          <button onClick={()=>setEditing({...a})} style={{width:28,height:28,background:`rgba(201,168,76,0.1)`,border:`1px solid rgba(201,168,76,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
+                          <button onClick={()=>setEditing({...a})} style={{width:28,height:28,background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
                           <button onClick={()=>delAsset(a.id)} style={{width:28,height:28,background:`rgba(255,69,96,0.1)`,border:`1px solid rgba(255,69,96,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.red}}><Trash2 size={11}/></button>
                         </div>
                       </td>
@@ -155,22 +158,22 @@ export default function MarketsManager() {
                   <tr key={t.id} style={{opacity:t.visible?1:0.5}}>
                     {editTicker?.id===t.id ? (
                       <>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <input value={editTicker.symbol} onChange={e=>setEditTicker({...editTicker,symbol:e.target.value})} style={{padding:'6px 10px',background:S.bg,border:`1px solid ${S.gold}`,borderRadius:6,color:S.text,fontSize:'0.78rem',fontFamily:'monospace',outline:'none',width:120}}/>
                         </td>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <input value={editTicker.price} onChange={e=>setEditTicker({...editTicker,price:e.target.value})} style={{padding:'6px 10px',background:S.bg,border:`1px solid ${S.gold}`,borderRadius:6,color:S.text,fontSize:'0.78rem',fontFamily:'monospace',outline:'none',width:100}}/>
                         </td>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <input type="number" value={editTicker.change} onChange={e=>setEditTicker({...editTicker,change:parseFloat(e.target.value)||0})} style={{padding:'6px 10px',background:S.bg,border:`1px solid ${S.gold}`,borderRadius:6,color:S.text,fontSize:'0.78rem',outline:'none',width:80}}/>
                         </td>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <select value={editTicker.dir} onChange={e=>setEditTicker({...editTicker,dir:e.target.value as 'up'|'down'})} style={{padding:'6px 10px',background:S.bg,border:`1px solid ${S.border}`,borderRadius:6,color:S.text,fontSize:'0.78rem',outline:'none'}}>
                             <option value="up">▲ صاعد</option><option value="down">▼ هابط</option>
                           </select>
                         </td>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}><Toggle on={editTicker.visible} onChange={v=>setEditTicker({...editTicker,visible:v})}/></td>
-                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}><Toggle on={editTicker.visible} onChange={v=>setEditTicker({...editTicker,visible:v})}/></td>
+                        <td style={{padding:'8px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <div style={{display:'flex',gap:4}}>
                             <button onClick={()=>saveTicker(editTicker)} style={{padding:'5px 10px',background:`rgba(0,217,126,0.1)`,border:`1px solid rgba(0,217,126,0.3)`,borderRadius:6,color:S.green,fontSize:'0.7rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>حفظ</button>
                             <button onClick={()=>setEditTicker(null)} style={{width:26,background:'transparent',border:`1px solid ${S.border}`,borderRadius:6,cursor:'pointer',color:S.muted,display:'flex',alignItems:'center',justifyContent:'center'}}><X size={10}/></button>
@@ -179,18 +182,18 @@ export default function MarketsManager() {
                       </>
                     ) : (
                       <>
-                        <td style={{padding:'10px 14px',fontSize:'0.82rem',fontWeight:700,color:S.text,borderBottom:`1px solid rgba(26,46,74,0.4)`,fontFamily:'monospace'}}>{t.symbol}</td>
-                        <td style={{padding:'10px 14px',fontSize:'0.78rem',color:S.muted,borderBottom:`1px solid rgba(26,46,74,0.4)`,fontFamily:'monospace'}}>{t.price}</td>
-                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'10px 14px',fontSize:'0.82rem',fontWeight:700,color:S.text,borderBottom:`1px solid rgba(203,213,225,0.6)`,fontFamily:'monospace'}}>{t.symbol}</td>
+                        <td style={{padding:'10px 14px',fontSize:'0.78rem',color:S.muted,borderBottom:`1px solid rgba(203,213,225,0.6)`,fontFamily:'monospace'}}>{t.price}</td>
+                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <span style={{color:t.dir==='up'?S.green:S.red,fontWeight:700,fontSize:'0.78rem',fontFamily:'monospace'}}>{t.dir==='up'?'+':''}{t.change}%</span>
                         </td>
-                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <span style={{fontSize:'0.75rem',color:t.dir==='up'?S.green:S.red}}>{t.dir==='up'?'▲ صاعد':'▼ هابط'}</span>
                         </td>
-                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}><Toggle on={t.visible} onChange={()=>toggleTicker(t.id)}/></td>
-                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(26,46,74,0.4)`}}>
+                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}><Toggle on={t.visible} onChange={()=>toggleTicker(t.id)}/></td>
+                        <td style={{padding:'10px 14px',borderBottom:`1px solid rgba(203,213,225,0.6)`}}>
                           <div style={{display:'flex',gap:4}}>
-                            <button onClick={()=>setEditTicker({...t})} style={{width:28,height:28,background:`rgba(201,168,76,0.1)`,border:`1px solid rgba(201,168,76,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
+                            <button onClick={()=>setEditTicker({...t})} style={{width:28,height:28,background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.gold}}><Edit size={11}/></button>
                             <button onClick={()=>delTicker(t.id)} style={{width:28,height:28,background:`rgba(255,69,96,0.1)`,border:`1px solid rgba(255,69,96,0.2)`,borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.red}}><Trash2 size={11}/></button>
                           </div>
                         </td>
@@ -215,7 +218,7 @@ export default function MarketsManager() {
             </div>
           ))}
           <button onClick={()=>setCategories([...categories,{id:Date.now(),name:'فئة جديدة',visible:true,order:categories.length+1}])}
-            style={{padding:'10px',background:`rgba(201,168,76,0.06)`,border:`1px dashed rgba(201,168,76,0.3)`,borderRadius:10,color:S.gold,fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+            style={{padding:'10px',background:`rgba(14,165,233,0.06)`,border:`1px dashed rgba(14,165,233,0.3)`,borderRadius:10,color:S.gold,fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
             + إضافة فئة
           </button>
         </div>
@@ -223,8 +226,8 @@ export default function MarketsManager() {
 
       {/* Asset Edit Modal */}
       {editing && (
-        <div style={{position:'fixed',inset:0,background:'rgba(6,14,26,0.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
-          <div style={{background:'#0A1628',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:560}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
+          <div style={{background:'#FFFFFF',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:560}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:'16px 20px',borderBottom:`1px solid ${S.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <span style={{fontWeight:700,color:S.text}}>تعديل الأصل المالي</span>
               <button onClick={()=>setEditing(null)} style={{background:'none',border:'none',cursor:'pointer',color:S.muted,display:'flex'}}><X size={18}/></button>
@@ -251,7 +254,7 @@ export default function MarketsManager() {
                   <Toggle on={editing.visible} onChange={v=>setEditing({...editing,visible:v})}/>
                 </div>
               </div>
-              <button onClick={()=>saveAsset(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
+              <button onClick={()=>saveAsset(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
                 💾 حفظ
               </button>
             </div>
