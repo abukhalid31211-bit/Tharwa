@@ -2,15 +2,12 @@ import { useState } from 'react'
 import { Plus, Edit, Trash2, X, Eye, EyeOff } from 'lucide-react'
 import { mockServices } from '../adminData'
 
-const S = {
-  bg:'#060E1A', card:'#0C1A2E', border:'#1A2E4A', gold:'#C9A84C',
-  text:'#E2E8F4', muted:'#6B84A8', green:'#00D97E', red:'#FF4560'
-}
+const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
 type Service = typeof mockServices[0]
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
-  return <div onClick={()=>onChange(!on)} style={{width:38,height:20,borderRadius:20,background:on?S.gold:'#1A2E4A',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
+  return <div onClick={()=>onChange(!on)} style={{width:38,height:20,borderRadius:20,background:on?S.gold:'#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
     <div style={{position:'absolute',top:2,left:on?'auto':2,right:on?2:'auto',width:16,height:16,borderRadius:'50%',background:'white',transition:'all 0.3s'}}/>
   </div>
 }
@@ -61,7 +58,10 @@ export default function ServicesManager() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {saved && <span style={{fontSize:'0.75rem',color:S.green}}>✓ تم الحفظ</span>}
-          <button onClick={openNew} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+          <button onClick={()=>window.open('/services','_blank')} style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.3)',borderRadius:8,color:'#0EA5E9',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+            <Eye size={13}/> معاينة
+          </button>
+          <button onClick={openNew} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
             <Plus size={14}/> خدمة جديدة
           </button>
         </div>
@@ -84,9 +84,9 @@ export default function ServicesManager() {
       {/* Services Grid */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
         {services.map(svc=>(
-          <div key={svc.id} style={{background:S.card,border:`1px solid ${svc.visible?S.border:'rgba(26,46,74,0.4)'}`,borderRadius:14,padding:20,opacity:svc.visible?1:0.6}}>
+          <div key={svc.id} style={{background:S.card,border:`1px solid ${svc.visible?S.border:'rgba(203,213,225,0.6)'}`,borderRadius:14,padding:20,opacity:svc.visible?1:0.6}}>
             <div style={{display:'flex',alignItems:'center',gap:12,marginBottom:14}}>
-              <div style={{width:48,height:48,borderRadius:12,background:`linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))`,border:`1px solid rgba(201,168,76,0.2)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.5rem'}}>
+              <div style={{width:48,height:48,borderRadius:12,background:`linear-gradient(135deg,rgba(14,165,233,0.15),rgba(14,165,233,0.05))`,border:`1px solid rgba(14,165,233,0.2)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.5rem'}}>
                 {svc.emoji}
               </div>
               <div style={{flex:1}}>
@@ -112,14 +112,14 @@ export default function ServicesManager() {
               <div style={{fontSize:'0.65rem',color:S.muted,fontWeight:600,marginBottom:6}}>المميزات ({svc.features.length})</div>
               <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
                 {svc.features.slice(0,4).map((f,i)=>(
-                  <span key={i} style={{fontSize:'0.62rem',color:S.text,background:'rgba(26,46,74,0.6)',borderRadius:4,padding:'2px 7px'}}>✅ {f}</span>
+                  <span key={i} style={{fontSize:'0.62rem',color:S.text,background:'rgba(203,213,225,0.8)',borderRadius:4,padding:'2px 7px'}}>✅ {f}</span>
                 ))}
                 {svc.features.length>4 && <span style={{fontSize:'0.62rem',color:S.muted,padding:'2px 4px'}}>+{svc.features.length-4}</span>}
               </div>
             </div>
 
             <div style={{display:'flex',gap:6,borderTop:`1px solid ${S.border}`,paddingTop:12}}>
-              <button onClick={()=>{setEditing({...svc});setIsNew(false)}} style={{flex:1,padding:'7px',background:`rgba(201,168,76,0.1)`,border:`1px solid rgba(201,168,76,0.2)`,borderRadius:7,color:S.gold,fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+              <button onClick={()=>{setEditing({...svc});setIsNew(false)}} style={{flex:1,padding:'7px',background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:7,color:S.gold,fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
                 <Edit size={11}/> تعديل
               </button>
               <button onClick={()=>toggle(svc.id)} style={{width:32,background:svc.visible?`rgba(107,132,168,0.1)`:`rgba(0,217,126,0.1)`,border:`1px solid ${svc.visible?'rgba(107,132,168,0.2)':'rgba(0,217,126,0.2)'}`,borderRadius:7,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:svc.visible?S.muted:S.green}}>
@@ -135,9 +135,9 @@ export default function ServicesManager() {
 
       {/* Edit Modal */}
       {editing && (
-        <div style={{position:'fixed',inset:0,background:'rgba(6,14,26,0.9)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
-          <div style={{background:'#0A1628',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:680,maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
-            <div style={{padding:'16px 20px',borderBottom:`1px solid ${S.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'#0A1628',zIndex:1}}>
+        <div style={{position:'fixed',inset:0,background:'rgba(15,23,42,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
+          <div style={{background:'#FFFFFF',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:680,maxHeight:'90vh',overflowY:'auto'}} onClick={e=>e.stopPropagation()}>
+            <div style={{padding:'16px 20px',borderBottom:`1px solid ${S.border}`,display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'#FFFFFF',zIndex:1}}>
               <span style={{fontWeight:700,color:S.text}}>{isNew?'خدمة جديدة':'تعديل الخدمة'}</span>
               <button onClick={()=>setEditing(null)} style={{background:'none',border:'none',cursor:'pointer',color:S.muted,display:'flex'}}><X size={18}/></button>
             </div>
@@ -168,7 +168,7 @@ export default function ServicesManager() {
                     </div>
                   ))}
                   <button onClick={()=>setEditing({...editing,features:[...editing.features,'']})}
-                    style={{padding:'7px',background:`rgba(201,168,76,0.06)`,border:`1px dashed rgba(201,168,76,0.3)`,borderRadius:7,color:S.gold,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+                    style={{padding:'7px',background:`rgba(14,165,233,0.06)`,border:`1px dashed rgba(14,165,233,0.3)`,borderRadius:7,color:S.gold,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
                     + إضافة ميزة
                   </button>
                 </div>
@@ -177,7 +177,7 @@ export default function ServicesManager() {
                 <span style={{fontSize:'0.82rem',color:S.text}}>إظهار الخدمة في الموقع</span>
                 <Toggle on={editing.visible} onChange={v=>setEditing({...editing,visible:v})}/>
               </div>
-              <button onClick={()=>save(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#E8C96A)`,border:'none',borderRadius:8,color:'#060E1A',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
+              <button onClick={()=>save(editing)} style={{width:'100%',padding:'11px',background:`linear-gradient(135deg,${S.gold},#38BDF8)`,border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
                 💾 حفظ الخدمة
               </button>
             </div>
