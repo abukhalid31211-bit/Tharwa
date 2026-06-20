@@ -341,3 +341,57 @@ export const mockAboutHeroStats = [
   { id: 3, icon: '⭐', value: '98.5%', label: 'نسبة رضا', order: 3, visible: true },
   { id: 4, icon: '🌐', value: '15+', label: 'سوق عالمي', order: 4, visible: true },
 ]
+
+// ==================== CLIENT LOGIN ACCOUNTS ====================
+
+export const mockClientAccounts = [
+  { id: 1, clientId: 1, name: 'محمد الأحمد', email: 'mohammed@tharwah.com', password: 'Tharwah@2024', phone: '+966501234567', status: 'active', portfolioCode: 'PF-001', createdAt: '2024-01-15', createdBy: 'أحمد المشرف', lastLogin: 'اليوم 10:32' },
+  { id: 2, clientId: 2, name: 'سارة العمري', email: 'sara@tharwah.com', password: 'Sara@2024!', phone: '+971501234567', status: 'active', portfolioCode: 'PF-002', createdAt: '2024-03-20', createdBy: 'خالد محمد', lastLogin: 'اليوم 09:15' },
+  { id: 3, clientId: 3, name: 'طارق القحطاني', email: 'tariq@tharwah.com', password: 'Tariq@2024!', phone: '+966501234568', status: 'suspended', portfolioCode: 'PF-003', createdAt: '2024-11-05', createdBy: 'أحمد المشرف', lastLogin: 'منذ أسبوع' },
+  { id: 4, clientId: 4, name: 'نورة الشمري', email: 'noura@tharwah.com', password: 'Noura@2024!', phone: '+974501234567', status: 'active', portfolioCode: 'PF-004', createdAt: '2024-02-10', createdBy: 'خالد محمد', lastLogin: 'أمس' },
+  { id: 5, clientId: 7, name: 'عبدالله السالم', email: 'abdullah@tharwah.com', password: 'Abdullah@2024', phone: '+966501234570', status: 'active', portfolioCode: 'PF-005', createdAt: '2024-12-01', createdBy: 'أحمد المشرف', lastLogin: 'اليوم 08:00' },
+  { id: 6, clientId: 6, name: 'فاطمة الزهراني', email: 'fatima@tharwah.com', password: 'Fatima@2024', phone: '+966501234569', status: 'active', portfolioCode: 'PF-006', createdAt: '2025-01-10', createdBy: 'خالد محمد', lastLogin: 'منذ 3 أيام' },
+]
+
+export const INVESTMENT_TYPES_LIST = [
+  'أسهم سعودية','أسهم خليجية','أسهم عالمية',
+  'عملات رقمية','فوركس (العملات)','معادن (ذهب/فضة/بلاتين)',
+  'نفط وطاقة','صناديق استثمارية','سندات وصكوك','عقارات',
+]
+
+export const BANKS_SA_LIST = [
+  'مصرف الراجحي','البنك الأهلي السعودي','بنك الرياض',
+  'بنك سامبا','بنك البلاد','بنك الجزيرة','بنك الإنماء',
+  'البنك السعودي الفرنسي','بنك العربي','بنك الخليج الدولي',
+  'بنك اليمامة','بنك الاتحاد',
+]
+
+export const STOCKS_SA_LIST = [
+  {code:'2222',name:'أرامكو السعودية'},{code:'1120',name:'مصرف الراجحي'},
+  {code:'2010',name:'سابك'},{code:'1050',name:'مصرف الإنماء'},
+  {code:'7010',name:'الاتصالات السعودية'},{code:'2350',name:'شركة الكهرباء'},
+  {code:'4280',name:'شركة المملكة'},{code:'1180',name:'بنك الرياض'},
+  {code:'3030',name:'سابك الأساسية'},{code:'2020',name:'صافولا'},
+]
+
+export const STOCKS_GLOBAL_LIST = [
+  {code:'AAPL',name:'Apple',exchange:'NASDAQ'},{code:'MSFT',name:'Microsoft',exchange:'NASDAQ'},
+  {code:'GOOGL',name:'Alphabet',exchange:'NASDAQ'},{code:'AMZN',name:'Amazon',exchange:'NASDAQ'},
+  {code:'TSLA',name:'Tesla',exchange:'NASDAQ'},{code:'NVDA',name:'NVIDIA',exchange:'NASDAQ'},
+  {code:'META',name:'Meta',exchange:'NASDAQ'},{code:'BRK.B',name:'Berkshire',exchange:'NYSE'},
+]
+
+export const CRYPTO_LIST = [
+  'BTC - Bitcoin','ETH - Ethereum','BNB - Binance Coin',
+  'XRP - Ripple','SOL - Solana','ADA - Cardano',
+  'AVAX - Avalanche','MATIC - Polygon','DOT - Polkadot','LINK - Chainlink',
+]
+
+export const FOREX_PAIRS_LIST = [
+  'EUR/USD','GBP/USD','USD/JPY','USD/SAR',
+  'EUR/SAR','GBP/SAR','XAU/USD','XAG/USD','USD/AED',
+]
+
+export const METALS_LIST = ['ذهب (Gold)','فضة (Silver)','بلاتين (Platinum)','بلاديوم (Palladium)']
+
+export const OIL_TYPES_LIST = ['خام برنت (Brent Crude)','خام WTI','غاز طبيعي','LNG - غاز مسال']

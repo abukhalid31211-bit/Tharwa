@@ -1,8 +1,8 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Menu, X, LogIn, TrendingUp, Globe, Bitcoin, Building2, Gem, Fuel,
-  ChevronDown, Star, Phone
+  ChevronDown, Star, Phone, BarChart3, LogOut, User
 } from "lucide-react";
 
 const links = [
@@ -16,54 +16,43 @@ const links = [
 ] as const;
 
 const megaServices = [
-  {
-    icon: TrendingUp,
-    label: "الأسهم الخليجية",
-    href: "/service/gulf-stocks",
-    cat: "أسواق الأسهم",
-  },
-  {
-    icon: Globe,
-    label: "الأسهم العالمية",
-    href: "/service/global-stocks",
-    cat: "أسواق الأسهم",
-  },
-  {
-    icon: Bitcoin,
-    label: "العملات الرقمية",
-    href: "/service/crypto",
-    cat: "أسواق بديلة",
-  },
-  {
-    icon: Building2,
-    label: "صناديق الاستثمار",
-    href: "/service/funds",
-    cat: "أسواق بديلة",
-  },
-  {
-    icon: Gem,
-    label: "المعادن والذهب",
-    href: "/service/metals",
-    cat: "أسواق بديلة",
-  },
-  {
-    icon: Fuel,
-    label: "النفط والطاقة",
-    href: "/service/energy",
-    cat: "أسواق بديلة",
-  },
+  { icon: TrendingUp, label: "الأسهم الخليجية", href: "/service/gulf-stocks", cat: "أسواق الأسهم" },
+  { icon: Globe, label: "الأسهم العالمية", href: "/service/global-stocks", cat: "أسواق الأسهم" },
+  { icon: Bitcoin, label: "العملات الرقمية", href: "/service/crypto", cat: "أسواق بديلة" },
+  { icon: Building2, label: "صناديق الاستثمار", href: "/service/funds", cat: "أسواق بديلة" },
+  { icon: Gem, label: "المعادن والذهب", href: "/service/metals", cat: "أسواق بديلة" },
+  { icon: Fuel, label: "النفط والطاقة", href: "/service/energy", cat: "أسواق بديلة" },
 ];
 
 const trending = ["الأسهم الخليجية", "Bitcoin", "الذهب والفضة", "صناديق ETF"];
+
+interface ClientAuth {
+  id: number;
+  name: string;
+  email: string;
+  portfolioCode: string;
+  initial: string;
+}
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [client, setClient] = useState<ClientAuth | null>(null);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const lastScroll = useRef(0);
   const megaRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const stored = localStorage.getItem('tharwah_client_auth');
+    if (stored) {
+      try { setClient(JSON.parse(stored)); } catch { setClient(null); }
+    }
+  }, [pathname]);
 
   useEffect(() => {
     const onScroll = () => {
@@ -77,15 +66,32 @@ export function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  useEffect(() => { setMobileOpen(false); setMegaOpen(false); }, [pathname]);
+  useEffect(() => { setMobileOpen(false); setMegaOpen(false); setProfileOpen(false); }, [pathname]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setMegaOpen(false); setMobileOpen(false); }
+      if (e.key === "Escape") { setMegaOpen(false); setMobileOpen(false); setProfileOpen(false); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false);
+      }
+    };
+    if (profileOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileOpen]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('tharwah_client_auth');
+    setClient(null);
+    setProfileOpen(false);
+    navigate({ to: '/' });
+  };
 
   return (
     <header
@@ -141,7 +147,6 @@ export function SiteHeader() {
                     }`}
                   >
                     <div className="grid grid-cols-3 gap-0 p-6">
-                      {/* Col 1 */}
                       <div>
                         <div className="text-[11px] font-black tracking-[2px] text-gold uppercase mb-4 pb-3 border-b border-border">
                           📈 أسواق الأسهم
@@ -157,7 +162,6 @@ export function SiteHeader() {
                           </Link>
                         ))}
                       </div>
-                      {/* Col 2 */}
                       <div>
                         <div className="text-[11px] font-black tracking-[2px] text-gold uppercase mb-4 pb-3 border-b border-border">
                           💰 أسواق بديلة
@@ -173,7 +177,6 @@ export function SiteHeader() {
                           </Link>
                         ))}
                       </div>
-                      {/* Col 3 */}
                       <div>
                         <div className="text-[11px] font-black tracking-[2px] text-gold uppercase mb-4 pb-3 border-b border-border">
                           🔥 الأكثر طلباً
@@ -189,7 +192,6 @@ export function SiteHeader() {
                         ))}
                       </div>
                     </div>
-                    {/* CTA Bar */}
                     <div className="border-t border-border bg-navy-mid/50 px-6 py-4 flex items-center justify-between">
                       <span className="text-sm text-text-muted">🎯 ابدأ الآن بمحادثة مجانية مع مستشارنا</span>
                       <Link
@@ -226,13 +228,87 @@ export function SiteHeader() {
           <button className="text-xs font-bold text-text-muted hover:text-gold transition-colors border border-border rounded-lg px-3 py-1.5">
             🌐 AR | EN
           </button>
-          <Link
-            to="/login"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-5 py-2.5 text-sm font-bold text-white shadow-gold transition-transform hover:-translate-y-0.5"
-          >
-            <LogIn className="size-4" />
-            بوابة العملاء
-          </Link>
+
+          {client ? (
+            /* ── Logged-in Client Profile ── */
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 border transition-all ${
+                  profileOpen
+                    ? "bg-gold/10 border-gold/40"
+                    : "bg-navy-mid border-border hover:border-gold/30 hover:bg-gold/5"
+                }`}
+              >
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-gold text-white font-black text-sm shadow-gold">
+                  {client.initial}
+                </div>
+                <div className="text-right leading-tight">
+                  <div className="text-xs font-bold text-foreground">{client.name.split(' ').slice(0,2).join(' ')}</div>
+                  <div className="text-[10px] text-gold font-mono">{client.portfolioCode}</div>
+                </div>
+                <ChevronDown className={`size-3.5 text-gold transition-transform ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {/* Profile Dropdown */}
+              {profileOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 rounded-2xl border border-border bg-white shadow-[0_12px_40px_rgba(0,0,0,0.12)] overflow-hidden z-50">
+                  {/* User card */}
+                  <div className="px-4 py-4 bg-gradient-to-b from-gold/5 to-transparent border-b border-border">
+                    <div className="flex items-center gap-3">
+                      <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-gold text-white font-black shadow-gold">
+                        {client.initial}
+                      </div>
+                      <div>
+                        <div className="font-bold text-foreground text-sm">{client.name}</div>
+                        <div className="text-[10px] text-text-muted mt-0.5">{client.email}</div>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-lg bg-gold/10 border border-gold/20 px-3 py-1.5 text-center">
+                      <span className="text-[10px] font-bold text-gold">محفظة: {client.portfolioCode}</span>
+                    </div>
+                  </div>
+
+                  {/* Menu items */}
+                  <div className="py-2">
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-gold hover:bg-gold/5 transition-colors"
+                    >
+                      <BarChart3 className="size-4 text-gold/70" />
+                      محفظتي الاستثمارية
+                    </Link>
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-foreground/80 hover:text-gold hover:bg-gold/5 transition-colors"
+                    >
+                      <User className="size-4 text-gold/70" />
+                      ملفي الشخصي
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-border py-2">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-down hover:bg-down/5 transition-colors text-right"
+                    >
+                      <LogOut className="size-4" />
+                      تسجيل الخروج
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── Guest: Login button ── */
+            <Link
+              to="/login"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-5 py-2.5 text-sm font-bold text-white shadow-gold transition-transform hover:-translate-y-0.5"
+            >
+              <LogIn className="size-4" />
+              بوابة العملاء
+            </Link>
+          )}
         </div>
 
         {/* Mobile toggle */}
@@ -265,13 +341,45 @@ export function SiteHeader() {
             })}
             <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
               <span className="text-xs font-bold text-text-muted border border-border rounded-lg px-3 py-1.5">🌐 AR | EN</span>
-              <Link
-                to="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-5 py-2.5 text-sm font-bold text-white"
-              >
-                <LogIn className="size-4" /> بوابة العملاء
-              </Link>
+              {client ? (
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/dashboard"
+                    className="inline-flex items-center gap-2 rounded-xl bg-gold/10 border border-gold/30 px-4 py-2 text-sm font-bold text-gold"
+                  >
+                    <BarChart3 className="size-4" /> محفظتي
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-1 rounded-xl border border-border px-3 py-2 text-sm text-down"
+                  >
+                    <LogOut className="size-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-gold px-5 py-2.5 text-sm font-bold text-white"
+                >
+                  <LogIn className="size-4" /> بوابة العملاء
+                </Link>
+              )}
             </div>
+
+            {/* Mobile: show client info if logged in */}
+            {client && (
+              <div className="mt-3 rounded-xl bg-gold/8 border border-gold/20 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-gold text-white font-black text-sm">
+                    {client.initial}
+                  </div>
+                  <div>
+                    <div className="font-bold text-foreground text-sm">{client.name}</div>
+                    <div className="text-[10px] text-gold font-mono mt-0.5">{client.portfolioCode}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

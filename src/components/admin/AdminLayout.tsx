@@ -28,9 +28,9 @@ const navGroups = [
   { title: 'الرئيسية', items: [
     { key: 'overview', Icon: Home, label: 'لوحة التحكم' },
   ]},
-  { title: 'إدارة العملاء', items: [
-    { key: 'clients', Icon: Users, label: 'العملاء', badge: 3 },
-    { key: 'portfolios', Icon: Briefcase, label: 'المحافظ' },
+  { title: 'إدارة العملاء ومحافظهم', items: [
+    { key: 'clients', Icon: Users, label: 'العملاء والحسابات', badge: 3 },
+    { key: 'portfolios', Icon: Briefcase, label: 'المحافظ الاستثمارية' },
     { key: 'transactions', Icon: CreditCard, label: 'العمليات', badge: 7 },
     { key: 'messages', Icon: MessageSquare, label: 'الرسائل', badge: 3 },
   ]},

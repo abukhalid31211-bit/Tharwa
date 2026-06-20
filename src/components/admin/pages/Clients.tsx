@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Search, Plus, Download, Filter, X, ChevronDown, Eye, Edit, Trash2, Mail, Phone } from 'lucide-react'
-import { mockClients, statusLabels } from '../adminData'
+import { Search, Plus, Download, X, Eye, Edit, Trash2, Key, UserPlus, Shield, Copy, Check, RefreshCw } from 'lucide-react'
+import { mockClients, mockClientAccounts, statusLabels } from '../adminData'
 
 const C = {
   card: { background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:14, overflow:'hidden' } as React.CSSProperties,
-  th: { padding:'11px 14px', textAlign:'right' as const, fontSize:'0.7rem', fontWeight:600, color:'#64748B', borderBottom:'1px solid #E2E8F0', background:'#F1F5F9', whiteSpace:'nowrap' as const, cursor:'pointer' },
+  th: { padding:'11px 14px', textAlign:'right' as const, fontSize:'0.7rem', fontWeight:600, color:'#64748B', borderBottom:'1px solid #E2E8F0', background:'#F1F5F9', whiteSpace:'nowrap' as const },
   td: { padding:'12px 14px', fontSize:'0.8rem', color:'#1E293B', borderBottom:'1px solid rgba(203,213,225,0.6)', verticalAlign:'middle' as const },
+  input: { width:'100%', padding:'9px 12px', background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:8, color:'#1E293B', fontSize:'0.82rem', outline:'none', fontFamily:"'Cairo',sans-serif", boxSizing:'border-box' as const },
+  label: { display:'block', fontSize:'0.72rem', fontWeight:700, color:'#475569', marginBottom:5 } as React.CSSProperties,
 }
 
 const statusMap: Record<string,{bg:string;color:string}> = {
@@ -13,22 +15,46 @@ const statusMap: Record<string,{bg:string;color:string}> = {
   pending:{bg:'rgba(245,158,11,0.1)',color:'#F59E0B'},
   frozen:{bg:'rgba(59,130,246,0.1)',color:'#3B82F6'},
   inactive:{bg:'rgba(255,69,96,0.1)',color:'#FF4560'},
+  suspended:{bg:'rgba(255,69,96,0.1)',color:'#FF4560'},
 }
-
 const catMap: Record<string,{bg:string;color:string}> = {
   VIP:{bg:'rgba(14,165,233,0.15)',color:'#0EA5E9'},
   premium:{bg:'rgba(139,92,246,0.15)',color:'#8B5CF6'},
   standard:{bg:'rgba(107,132,168,0.15)',color:'#64748B'},
 }
 
+const accountStatusMap: Record<string,{bg:string;color:string;label:string}> = {
+  active:{bg:'rgba(0,217,126,0.1)',color:'#00D97E',label:'نشط'},
+  suspended:{bg:'rgba(255,69,96,0.1)',color:'#FF4560',label:'موقوف'},
+  pending:{bg:'rgba(245,158,11,0.1)',color:'#F59E0B',label:'معلق'},
+}
+
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$'
+  return Array.from({length:10},()=>chars[Math.floor(Math.random()*chars.length)]).join('')
+}
+
 export default function Clients() {
+  const [mainTab, setMainTab] = useState<'list'|'accounts'|'create_account'>('list')
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [catFilter, setCatFilter] = useState('all')
   const [selected, setSelected] = useState<number[]>([])
   const [viewClient, setViewClient] = useState<typeof mockClients[0]|null>(null)
-  const [showAdd, setShowAdd] = useState(false)
-  const [sort, setSort] = useState<{field:string;dir:'asc'|'desc'}>({field:'name',dir:'asc'})
+  const [accountSearch, setAccountSearch] = useState('')
+  const [copiedId, setCopiedId] = useState<number|null>(null)
+  const [showPass, setShowPass] = useState<Record<number,boolean>>({})
+
+  // Create Account form state
+  const [form, setForm] = useState({
+    clientId: '',
+    email: '',
+    password: generatePassword(),
+    sendEmail: true,
+    status: 'active',
+    note: '',
+  })
+  const [formSaved, setFormSaved] = useState(false)
 
   const filtered = mockClients.filter(c => {
     if (search && !c.name.includes(search) && !c.email.includes(search) && !c.city.includes(search)) return false
@@ -36,6 +62,10 @@ export default function Clients() {
     if (catFilter !== 'all' && c.category !== catFilter) return false
     return true
   })
+
+  const filteredAccounts = mockClientAccounts.filter(a =>
+    !accountSearch || a.name.includes(accountSearch) || a.email.includes(accountSearch)
+  )
 
   const tabs = [
     {key:'all',label:'الكل',count:mockClients.length},
@@ -47,26 +77,49 @@ export default function Clients() {
   const stats = [
     {label:'إجمالي العملاء',value:mockClients.length,icon:'👥',color:'#3B82F6'},
     {label:'عملاء نشطون',value:mockClients.filter(c=>c.status==='active').length,icon:'✅',color:'#00D97E'},
-    {label:'VIP',value:mockClients.filter(c=>c.category==='VIP').length,icon:'👑',color:'#0EA5E9'},
-    {label:'إجمالي المحافظ',value:'$' + (mockClients.reduce((s,c)=>s+c.portfolio,0)/1000).toFixed(0) + 'K',icon:'💰',color:'#0EA5E9'},
+    {label:'حسابات مفعّلة',value:mockClientAccounts.filter(a=>a.status==='active').length,icon:'🔑',color:'#0EA5E9'},
+    {label:'إجمالي المحافظ',value:'$' + (mockClients.reduce((s,c)=>s+c.portfolio,0)/1000).toFixed(0) + 'K',icon:'💰',color:'#C9A84C'},
   ]
 
   const toggleSelect = (id:number) => setSelected(s => s.includes(id) ? s.filter(x=>x!==id) : [...s,id])
+
+  const copyToClipboard = (text:string, id:number) => {
+    navigator.clipboard.writeText(text).then(()=>{
+      setCopiedId(id)
+      setTimeout(()=>setCopiedId(null),2000)
+    })
+  }
+
+  const handleSaveAccount = (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormSaved(true)
+    setTimeout(()=>{ setFormSaved(false); setMainTab('accounts') }, 2000)
+  }
+
+  const mainTabs = [
+    {key:'list',label:'📋 قائمة العملاء',count:mockClients.length},
+    {key:'accounts',label:'🔑 حسابات الدخول',count:mockClientAccounts.length},
+    {key:'create_account',label:'➕ إنشاء حساب جديد'},
+  ]
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
       {/* Header */}
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div>
-          <h1 style={{fontSize:'1.4rem',fontWeight:800,color:'#1E293B',margin:0}}>إدارة العملاء</h1>
-          <p style={{fontSize:'0.78rem',color:'#64748B',marginTop:3}}>{mockClients.length} عميل مسجل — {mockClients.filter(c=>c.status==='active').length} نشط</p>
+          <h1 style={{fontSize:'1.4rem',fontWeight:800,color:'#1E293B',margin:0}}>إدارة العملاء والحسابات</h1>
+          <p style={{fontSize:'0.78rem',color:'#64748B',marginTop:3}}>
+            {mockClients.length} عميل مسجل — {mockClientAccounts.filter(a=>a.status==='active').length} حساب دخول نشط
+          </p>
         </div>
         <div style={{display:'flex',gap:8}}>
           <button style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'transparent',border:'1px solid #E2E8F0',borderRadius:8,color:'#64748B',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.78rem'}}>
             <Download size={13}/> تصدير
           </button>
-          <button onClick={()=>setShowAdd(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
-            <Plus size={14}/> إضافة عميل
+          <button
+            onClick={()=>setMainTab('create_account')}
+            style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+            <UserPlus size={14}/> إنشاء حساب عميل
           </button>
         </div>
       </div>
@@ -84,132 +137,394 @@ export default function Clients() {
         ))}
       </div>
 
-      {/* KYC Pending Section */}
-      <div style={{background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:12,padding:'12px 16px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <span>⚠️</span>
-            <span style={{fontSize:'0.82rem',fontWeight:700,color:'#F59E0B'}}>طلبات KYC معلقة</span>
-            <span style={{background:'rgba(245,158,11,0.2)',color:'#F59E0B',borderRadius:10,padding:'2px 8px',fontSize:'0.65rem',fontWeight:700}}>3</span>
-          </div>
-          <button style={{fontSize:'0.72rem',color:'#F59E0B',background:'none',border:'1px solid rgba(245,158,11,0.3)',borderRadius:6,padding:'4px 10px',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>مراجعة الكل</button>
-        </div>
-        <div style={{display:'flex',gap:10}}>
-          {mockClients.filter(c=>c.status==='pending').slice(0,3).map(c => (
-            <div key={c.id} style={{flex:1,background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,padding:'10px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-              <div>
-                <div style={{fontSize:'0.78rem',fontWeight:600,color:'#1E293B'}}>{c.name}</div>
-                <div style={{fontSize:'0.65rem',color:'#64748B',marginTop:2}}>{c.country} {c.city} · {c.joined}</div>
-              </div>
-              <div style={{display:'flex',gap:5}}>
-                <button style={{padding:'4px 9px',background:'rgba(0,217,126,0.1)',border:'1px solid rgba(0,217,126,0.3)',borderRadius:5,color:'#00D97E',fontSize:'0.65rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>قبول</button>
-                <button style={{padding:'4px 9px',background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.3)',borderRadius:5,color:'#FF4560',fontSize:'0.65rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>رفض</button>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Main Tabs */}
+      <div style={{display:'flex',gap:2,background:'#F1F5F9',borderRadius:10,padding:4,width:'fit-content'}}>
+        {mainTabs.map(t=>(
+          <button key={t.key} onClick={()=>setMainTab(t.key as any)}
+            style={{padding:'8px 18px',background:mainTab===t.key?'#FFFFFF':'transparent',border:'none',borderRadius:7,
+              color:mainTab===t.key?'#0EA5E9':'#64748B',fontSize:'0.8rem',fontWeight:mainTab===t.key?700:500,
+              cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',gap:6,
+              boxShadow:mainTab===t.key?'0 1px 4px rgba(0,0,0,0.1)':'none',transition:'all 0.15s',whiteSpace:'nowrap'}}>
+            {t.label}
+            {(t as any).count !== undefined && (
+              <span style={{background:mainTab===t.key?'rgba(14,165,233,0.15)':'#E2E8F0',color:mainTab===t.key?'#0EA5E9':'#64748B',borderRadius:8,padding:'1px 7px',fontSize:'0.62rem',fontWeight:700}}>
+                {(t as any).count}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
 
-      {/* Table */}
-      <div style={C.card}>
-        {/* Toolbar */}
-        <div style={{padding:'14px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
-          {/* Tabs */}
-          <div style={{display:'flex',gap:2,background:'#F1F5F9',borderRadius:8,padding:3}}>
-            {tabs.map(t => (
-              <button key={t.key} onClick={()=>setStatusFilter(t.key)} style={{padding:'5px 12px',background: statusFilter===t.key ? '#F8FAFC' : 'transparent',border:'none',borderRadius:6,color: statusFilter===t.key ? '#1E293B' : '#64748B',fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',gap:5,whiteSpace:'nowrap'}}>
-                {t.label}
-                <span style={{background: statusFilter===t.key ? 'rgba(14,165,233,0.2)' : '#E2E8F0',color: statusFilter===t.key ? '#0EA5E9' : '#64748B',borderRadius:8,padding:'1px 6px',fontSize:'0.6rem'}}>{t.count}</span>
-              </button>
-            ))}
-          </div>
-
-          <div style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,padding:'7px 12px'}}>
-            <Search size={13} color="#64748B"/>
-            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث بالاسم، البريد، المدينة..." style={{background:'none',border:'none',outline:'none',color:'#1E293B',fontSize:'0.78rem',fontFamily:"'Cairo',sans-serif",flex:1}}/>
-          </div>
-
-          <select value={catFilter} onChange={e=>setCatFilter(e.target.value)} style={{padding:'7px 10px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#64748B',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
-            <option value="all">كل الفئات</option>
-            <option value="VIP">VIP</option>
-            <option value="premium">بريميوم</option>
-            <option value="standard">عادي</option>
-          </select>
-
-          {selected.length > 0 && (
-            <div style={{display:'flex',gap:6,alignItems:'center'}}>
-              <span style={{fontSize:'0.72rem',color:'#64748B'}}>{selected.length} محدد</span>
-              <button style={{padding:'5px 10px',background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.3)',borderRadius:6,color:'#FF4560',fontSize:'0.7rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>حذف</button>
+      {/* ========== TAB 1: CLIENT LIST ========== */}
+      {mainTab === 'list' && (
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          {/* KYC Pending */}
+          {mockClients.filter(c=>c.status==='pending').length > 0 && (
+            <div style={{background:'rgba(245,158,11,0.06)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:12,padding:'12px 16px'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <span>⚠️</span>
+                  <span style={{fontSize:'0.82rem',fontWeight:700,color:'#F59E0B'}}>طلبات KYC معلقة</span>
+                  <span style={{background:'rgba(245,158,11,0.2)',color:'#F59E0B',borderRadius:10,padding:'2px 8px',fontSize:'0.65rem',fontWeight:700}}>
+                    {mockClients.filter(c=>c.status==='pending').length}
+                  </span>
+                </div>
+                <button style={{fontSize:'0.72rem',color:'#F59E0B',background:'none',border:'1px solid rgba(245,158,11,0.3)',borderRadius:6,padding:'4px 10px',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>مراجعة الكل</button>
+              </div>
+              <div style={{display:'flex',gap:10}}>
+                {mockClients.filter(c=>c.status==='pending').slice(0,3).map(c=>(
+                  <div key={c.id} style={{flex:1,background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,padding:'10px 12px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                    <div>
+                      <div style={{fontSize:'0.78rem',fontWeight:600,color:'#1E293B'}}>{c.name}</div>
+                      <div style={{fontSize:'0.65rem',color:'#64748B',marginTop:2}}>{c.country} {c.city} · {c.joined}</div>
+                    </div>
+                    <div style={{display:'flex',gap:5}}>
+                      <button style={{padding:'4px 9px',background:'rgba(0,217,126,0.1)',border:'1px solid rgba(0,217,126,0.3)',borderRadius:5,color:'#00D97E',fontSize:'0.65rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>قبول</button>
+                      <button style={{padding:'4px 9px',background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.3)',borderRadius:5,color:'#FF4560',fontSize:'0.65rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>رفض</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Table */}
-        <div style={{overflowX:'auto'}}>
-          <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
-            <thead>
-              <tr>
-                <th style={{...C.th,width:40}}><input type="checkbox" style={{cursor:'pointer'}}/></th>
-                {['العميل','التواصل','الدولة / المدينة','المستشار','المحفظة','الفئة','الحالة','آخر نشاط',''].map(h => (
-                  <th key={h} style={C.th}>{h}</th>
+          {/* Table */}
+          <div style={C.card}>
+            <div style={{padding:'14px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',alignItems:'center',gap:12,flexWrap:'wrap'}}>
+              <div style={{display:'flex',gap:2,background:'#F1F5F9',borderRadius:8,padding:3}}>
+                {tabs.map(t=>(
+                  <button key={t.key} onClick={()=>setStatusFilter(t.key)}
+                    style={{padding:'5px 12px',background:statusFilter===t.key?'#F8FAFC':'transparent',border:'none',borderRadius:6,
+                      color:statusFilter===t.key?'#1E293B':'#64748B',fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",
+                      display:'flex',alignItems:'center',gap:5,whiteSpace:'nowrap'}}>
+                    {t.label}
+                    <span style={{background:statusFilter===t.key?'rgba(14,165,233,0.2)':'#E2E8F0',color:statusFilter===t.key?'#0EA5E9':'#64748B',borderRadius:8,padding:'1px 6px',fontSize:'0.6rem'}}>{t.count}</span>
+                  </button>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(c => (
-                <tr key={c.id}
-                  onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.03)'}
-                  onMouseLeave={e=>e.currentTarget.style.background='transparent'}
-                  style={{transition:'background 0.1s',cursor:'pointer'}}>
-                  <td style={C.td}><input type="checkbox" checked={selected.includes(c.id)} onChange={()=>toggleSelect(c.id)} style={{cursor:'pointer'}}/></td>
-                  <td style={C.td}>
-                    <div style={{display:'flex',alignItems:'center',gap:10}}>
-                      <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#BAE6FD,#7DD3FC)',border:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.8rem',fontWeight:700,color:'#0EA5E9',flexShrink:0}}>
-                        {c.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div style={{fontSize:'0.82rem',fontWeight:600,color:'#1E293B'}}>{c.name}</div>
-                        <div style={{fontSize:'0.65rem',color:'#64748B'}}>ID: {c.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td style={C.td}>
-                    <div style={{fontSize:'0.72rem',color:'#64748B'}}>{c.email}</div>
-                    <div style={{fontSize:'0.72rem',color:'#64748B',marginTop:2,fontFamily:'monospace'}}>{c.phone}</div>
-                  </td>
-                  <td style={C.td}><span style={{fontSize:'0.82rem'}}>{c.country}</span> <span style={{fontSize:'0.78rem',color:'#1E293B'}}>{c.city}</span></td>
-                  <td style={C.td}><span style={{fontSize:'0.78rem',color:'#1E293B'}}>{c.advisor}</span></td>
-                  <td style={C.td}><span style={{fontFamily:'monospace',fontWeight:700,color:'#0EA5E9',fontSize:'0.82rem'}}>${c.portfolio.toLocaleString()}</span></td>
-                  <td style={C.td}>
-                    <span style={{...catMap[c.category],borderRadius:20,padding:'3px 10px',fontSize:'0.68rem',fontWeight:700}}>{c.category.toUpperCase()}</span>
-                  </td>
-                  <td style={C.td}>
-                    <span style={{...statusMap[c.status],borderRadius:20,padding:'3px 10px',fontSize:'0.68rem',fontWeight:600}}>{statusLabels[c.status]}</span>
-                  </td>
-                  <td style={{...C.td,fontSize:'0.72rem',color:'#64748B',whiteSpace:'nowrap'}}>{c.lastActive}</td>
-                  <td style={C.td}>
-                    <div style={{display:'flex',gap:5}}>
-                      <button onClick={()=>setViewClient(c)} style={{width:28,height:28,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#3B82F6'}}><Eye size={12}/></button>
-                      <button style={{width:28,height:28,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9'}}><Edit size={12}/></button>
-                      <button style={{width:28,height:28,background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#FF4560'}}><Trash2 size={12}/></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div style={{padding:'12px 16px',borderTop:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-          <span style={{fontSize:'0.72rem',color:'#64748B'}}>عرض {filtered.length} من {mockClients.length} عميل</span>
-          <div style={{display:'flex',gap:4}}>
-            {[1,2,3].map(p => (
-              <button key={p} style={{width:28,height:28,background: p===1 ? 'rgba(14,165,233,0.15)' : 'transparent',border:`1px solid ${p===1 ? 'rgba(14,165,233,0.3)' : '#E2E8F0'}`,borderRadius:6,color: p===1 ? '#0EA5E9' : '#64748B',fontSize:'0.75rem',cursor:'pointer'}}>{p}</button>
-            ))}
+              </div>
+              <div style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,padding:'7px 12px'}}>
+                <Search size={13} color="#64748B"/>
+                <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="بحث بالاسم، البريد، المدينة..."
+                  style={{background:'none',border:'none',outline:'none',color:'#1E293B',fontSize:'0.78rem',fontFamily:"'Cairo',sans-serif",flex:1}}/>
+              </div>
+              <select value={catFilter} onChange={e=>setCatFilter(e.target.value)}
+                style={{padding:'7px 10px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#64748B',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+                <option value="all">كل الفئات</option>
+                <option value="VIP">VIP</option>
+                <option value="premium">بريميوم</option>
+                <option value="standard">عادي</option>
+              </select>
+            </div>
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
+                <thead>
+                  <tr>
+                    <th style={{...C.th,width:40}}><input type="checkbox" style={{cursor:'pointer'}}/></th>
+                    {['العميل','التواصل','الدولة / المدينة','المستشار','المحفظة','الفئة','الحالة','آخر نشاط',''].map(h=>(
+                      <th key={h} style={C.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(c=>(
+                    <tr key={c.id}
+                      onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.03)'}
+                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+                      style={{transition:'background 0.1s',cursor:'pointer'}}>
+                      <td style={C.td}><input type="checkbox" checked={selected.includes(c.id)} onChange={()=>toggleSelect(c.id)} style={{cursor:'pointer'}}/></td>
+                      <td style={C.td}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div style={{width:34,height:34,borderRadius:'50%',background:'linear-gradient(135deg,#BAE6FD,#7DD3FC)',border:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.8rem',fontWeight:700,color:'#0EA5E9',flexShrink:0}}>
+                            {c.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div style={{fontSize:'0.82rem',fontWeight:600,color:'#1E293B'}}>{c.name}</div>
+                            <div style={{fontSize:'0.65rem',color:'#64748B'}}>ID: {c.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={C.td}>
+                        <div style={{fontSize:'0.72rem',color:'#64748B'}}>{c.email}</div>
+                        <div style={{fontSize:'0.72rem',color:'#64748B',marginTop:2,fontFamily:'monospace'}}>{c.phone}</div>
+                      </td>
+                      <td style={C.td}><span style={{fontSize:'0.82rem'}}>{c.country}</span> <span style={{fontSize:'0.78rem',color:'#1E293B'}}>{c.city}</span></td>
+                      <td style={C.td}><span style={{fontSize:'0.78rem',color:'#1E293B'}}>{c.advisor}</span></td>
+                      <td style={C.td}><span style={{fontFamily:'monospace',fontWeight:700,color:'#0EA5E9',fontSize:'0.82rem'}}>${c.portfolio.toLocaleString()}</span></td>
+                      <td style={C.td}>
+                        <span style={{...catMap[c.category],borderRadius:20,padding:'3px 10px',fontSize:'0.68rem',fontWeight:700}}>{c.category.toUpperCase()}</span>
+                      </td>
+                      <td style={C.td}>
+                        <span style={{...statusMap[c.status],borderRadius:20,padding:'3px 10px',fontSize:'0.68rem',fontWeight:600}}>{statusLabels[c.status]}</span>
+                      </td>
+                      <td style={{...C.td,fontSize:'0.72rem',color:'#64748B',whiteSpace:'nowrap'}}>{c.lastActive}</td>
+                      <td style={C.td}>
+                        <div style={{display:'flex',gap:5}}>
+                          <button onClick={()=>setViewClient(c)} style={{width:28,height:28,background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#3B82F6'}}><Eye size={12}/></button>
+                          <button style={{width:28,height:28,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9'}}><Edit size={12}/></button>
+                          <button onClick={()=>{ setForm(f=>({...f,clientId:c.id.toString(),email:c.email.replace('@email.com','@tharwah.com')})); setMainTab('create_account') }}
+                            style={{width:28,height:28,background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#C9A84C'}} title="إنشاء حساب دخول">
+                            <Key size={12}/>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{padding:'12px 16px',borderTop:'1px solid #E2E8F0',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:'0.72rem',color:'#64748B'}}>عرض {filtered.length} من {mockClients.length} عميل</span>
+              <div style={{display:'flex',gap:4}}>
+                {[1,2,3].map(p=>(
+                  <button key={p} style={{width:28,height:28,background:p===1?'rgba(14,165,233,0.15)':'transparent',border:`1px solid ${p===1?'rgba(14,165,233,0.3)':'#E2E8F0'}`,borderRadius:6,color:p===1?'#0EA5E9':'#64748B',fontSize:'0.75rem',cursor:'pointer'}}>{p}</button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ========== TAB 2: LOGIN ACCOUNTS ========== */}
+      {mainTab === 'accounts' && (
+        <div style={{display:'flex',flexDirection:'column',gap:16}}>
+          <div style={{background:'rgba(14,165,233,0.06)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:12,padding:'12px 18px',display:'flex',alignItems:'center',gap:10}}>
+            <Shield size={16} color="#0EA5E9" />
+            <span style={{fontSize:'0.82rem',color:'#0EA5E9',fontWeight:600}}>بيانات الدخول السرية — مرئية فقط للمشرفين ذوي الصلاحيات العليا</span>
+          </div>
+
+          <div style={C.card}>
+            <div style={{padding:'14px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',alignItems:'center',gap:12}}>
+              <div style={{flex:1,display:'flex',alignItems:'center',gap:8,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,padding:'7px 12px'}}>
+                <Search size={13} color="#64748B"/>
+                <input value={accountSearch} onChange={e=>setAccountSearch(e.target.value)} placeholder="بحث بالاسم أو البريد الإلكتروني..."
+                  style={{background:'none',border:'none',outline:'none',color:'#1E293B',fontSize:'0.78rem',fontFamily:"'Cairo',sans-serif",flex:1}}/>
+              </div>
+              <button onClick={()=>setMainTab('create_account')}
+                style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFF',fontWeight:700,fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",whiteSpace:'nowrap'}}>
+                <Plus size={13}/> حساب جديد
+              </button>
+            </div>
+            <div style={{overflowX:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
+                <thead>
+                  <tr>
+                    {['العميل','كود المحفظة','البريد الإلكتروني','كلمة المرور','الحالة','تاريخ الإنشاء','آخر دخول','أنشأه','إجراءات'].map(h=>(
+                      <th key={h} style={C.th}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAccounts.map(a=>(
+                    <tr key={a.id}
+                      onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.03)'}
+                      onMouseLeave={e=>e.currentTarget.style.background='transparent'}
+                      style={{transition:'background 0.1s'}}>
+                      <td style={C.td}>
+                        <div style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'0.78rem',fontWeight:700,color:'#FFF',flexShrink:0}}>
+                            {a.name.charAt(0)}
+                          </div>
+                          <span style={{fontSize:'0.82rem',fontWeight:600,color:'#1E293B'}}>{a.name}</span>
+                        </div>
+                      </td>
+                      <td style={C.td}>
+                        <span style={{fontFamily:'monospace',fontSize:'0.78rem',fontWeight:700,color:'#C9A84C',background:'rgba(201,168,76,0.1)',padding:'3px 8px',borderRadius:6}}>{a.portfolioCode}</span>
+                      </td>
+                      <td style={C.td}>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <span style={{fontFamily:'monospace',fontSize:'0.78rem',color:'#1E293B'}}>{a.email}</span>
+                          <button onClick={()=>copyToClipboard(a.email,a.id*10)}
+                            style={{width:22,height:22,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748B',padding:0}}>
+                            {copiedId===a.id*10?<Check size={11} color="#00D97E"/>:<Copy size={11}/>}
+                          </button>
+                        </div>
+                      </td>
+                      <td style={C.td}>
+                        <div style={{display:'flex',alignItems:'center',gap:6}}>
+                          <span style={{fontFamily:'monospace',fontSize:'0.78rem',color:'#1E293B',letterSpacing:1}}>
+                            {showPass[a.id] ? a.password : '••••••••••'}
+                          </span>
+                          <button onClick={()=>setShowPass(s=>({...s,[a.id]:!s[a.id]}))}
+                            style={{width:22,height:22,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748B',padding:0,fontSize:'0.6rem'}}>
+                            {showPass[a.id]?'🙈':'👁'}
+                          </button>
+                          {showPass[a.id] && (
+                            <button onClick={()=>copyToClipboard(a.password,a.id*100)}
+                              style={{width:22,height:22,background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:4,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#64748B',padding:0}}>
+                              {copiedId===a.id*100?<Check size={11} color="#00D97E"/>:<Copy size={11}/>}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td style={C.td}>
+                        <span style={{...accountStatusMap[a.status],borderRadius:20,padding:'3px 10px',fontSize:'0.68rem',fontWeight:600}}>
+                          {accountStatusMap[a.status]?.label||a.status}
+                        </span>
+                      </td>
+                      <td style={{...C.td,fontSize:'0.72rem',color:'#64748B',whiteSpace:'nowrap'}}>{a.createdAt}</td>
+                      <td style={{...C.td,fontSize:'0.72rem',color:'#64748B',whiteSpace:'nowrap'}}>{a.lastLogin}</td>
+                      <td style={{...C.td,fontSize:'0.72rem',color:'#64748B'}}>{a.createdBy}</td>
+                      <td style={C.td}>
+                        <div style={{display:'flex',gap:4}}>
+                          <button style={{width:26,height:26,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:5,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9',title:'تعديل'}}><Edit size={11}/></button>
+                          <button style={{width:26,height:26,background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.2)',borderRadius:5,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#F59E0B',title:'إعادة تعيين كلمة المرور'}}><RefreshCw size={11}/></button>
+                          <button style={{width:26,height:26,background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:5,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#FF4560',title:'إيقاف الحساب'}}><Trash2 size={11}/></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{padding:'12px 16px',borderTop:'1px solid #E2E8F0'}}>
+              <span style={{fontSize:'0.72rem',color:'#64748B'}}>{filteredAccounts.length} حساب</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== TAB 3: CREATE ACCOUNT ========== */}
+      {mainTab === 'create_account' && (
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          {/* Disclaimer */}
+          <div style={{background:'linear-gradient(135deg,rgba(201,168,76,0.12),rgba(14,165,233,0.08))',border:'1px solid rgba(201,168,76,0.3)',borderRadius:12,padding:'14px 18px',display:'flex',alignItems:'flex-start',gap:12}}>
+            <span style={{fontSize:'1.3rem',flexShrink:0}}>⚠️</span>
+            <div>
+              <div style={{fontSize:'0.85rem',fontWeight:700,color:'#1E293B',marginBottom:4}}>إنشاء حساب بوابة العملاء</div>
+              <div style={{fontSize:'0.78rem',color:'#475569',lineHeight:1.7}}>
+                هذا الحساب سيتيح للعميل الوصول إلى <strong>بوابة العملاء</strong> ورؤية محفظته الاستثمارية. تأكد من صحة البيانات قبل الحفظ.
+                كلمة المرور يجب إرسالها للعميل عبر قناة آمنة.
+              </div>
+            </div>
+          </div>
+
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
+            {/* Form */}
+            <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,padding:24}}>
+              <div style={{fontSize:'0.95rem',fontWeight:700,color:'#1E293B',marginBottom:20,display:'flex',alignItems:'center',gap:8}}>
+                <UserPlus size={18} color="#0EA5E9" /> بيانات الحساب الجديد
+              </div>
+              <form onSubmit={handleSaveAccount} style={{display:'flex',flexDirection:'column',gap:18}}>
+                <div>
+                  <label style={C.label}>العميل المرتبط *</label>
+                  <select value={form.clientId} onChange={e=>setForm(f=>({...f,clientId:e.target.value}))}
+                    style={{...C.input,cursor:'pointer'}} required>
+                    <option value="">-- اختر العميل --</option>
+                    {mockClients.map(c=>(
+                      <option key={c.id} value={c.id}>{c.name} — {c.email}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={C.label}>البريد الإلكتروني لتسجيل الدخول *</label>
+                  <input type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))}
+                    placeholder="client@tharwah.com" style={C.input} required />
+                  <div style={{fontSize:'0.68rem',color:'#64748B',marginTop:4}}>يُنصح باستخدام نطاق @tharwah.com</div>
+                </div>
+                <div>
+                  <label style={C.label}>كلمة المرور *</label>
+                  <div style={{display:'flex',gap:8}}>
+                    <input type="text" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))}
+                      style={{...C.input,fontFamily:'monospace',flex:1}} required />
+                    <button type="button" onClick={()=>setForm(f=>({...f,password:generatePassword()}))}
+                      style={{padding:'9px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,cursor:'pointer',color:'#64748B',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <RefreshCw size={14}/>
+                    </button>
+                    <button type="button" onClick={()=>copyToClipboard(form.password,9999)}
+                      style={{padding:'9px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,cursor:'pointer',color:'#64748B',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      {copiedId===9999?<Check size={14} color="#00D97E"/>:<Copy size={14}/>}
+                    </button>
+                  </div>
+                  <div style={{fontSize:'0.68rem',color:'#64748B',marginTop:4}}>يُنصح بكلمة مرور قوية لا تقل عن 8 أحرف تشمل أرقام ورموز</div>
+                </div>
+                <div>
+                  <label style={C.label}>حالة الحساب</label>
+                  <select value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))} style={{...C.input,cursor:'pointer'}}>
+                    <option value="active">نشط — يستطيع الدخول فوراً</option>
+                    <option value="pending">معلق — بانتظار التفعيل</option>
+                    <option value="suspended">موقوف مؤقتاً</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{...C.label,display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                    <input type="checkbox" checked={form.sendEmail} onChange={e=>setForm(f=>({...f,sendEmail:e.target.checked}))}
+                      style={{width:16,height:16,cursor:'pointer'}}/>
+                    <span>إرسال بيانات الدخول للعميل عبر البريد الإلكتروني</span>
+                  </label>
+                </div>
+                <div>
+                  <label style={C.label}>ملاحظة للسجل</label>
+                  <textarea value={form.note} onChange={e=>setForm(f=>({...f,note:e.target.value}))}
+                    placeholder="ملاحظات اختيارية تُحفظ في سجل النشاط..."
+                    rows={3}
+                    style={{...C.input,resize:'vertical',lineHeight:1.7}}/>
+                </div>
+                <div style={{display:'flex',gap:10,marginTop:4}}>
+                  <button type="submit"
+                    style={{flex:1,padding:'11px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFF',fontWeight:700,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem',display:'flex',alignItems:'center',justifyContent:'center',gap:6}}>
+                    {formSaved ? <><Check size={16}/> تم الحفظ!</> : <><Key size={15}/> إنشاء الحساب</>}
+                  </button>
+                  <button type="button" onClick={()=>setMainTab('list')}
+                    style={{padding:'11px 20px',background:'transparent',border:'1px solid #E2E8F0',borderRadius:8,color:'#64748B',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Preview Card */}
+            <div style={{display:'flex',flexDirection:'column',gap:16}}>
+              <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,padding:20}}>
+                <div style={{fontSize:'0.85rem',fontWeight:700,color:'#1E293B',marginBottom:14}}>معاينة كارت الحساب</div>
+                <div style={{background:'linear-gradient(135deg,#1E293B,#0F172A)',borderRadius:12,padding:20,color:'#FFF',position:'relative',overflow:'hidden'}}>
+                  <div style={{position:'absolute',top:-20,right:-20,width:100,height:100,borderRadius:'50%',background:'rgba(201,168,76,0.15)'}}/>
+                  <div style={{position:'absolute',bottom:-30,left:-30,width:120,height:120,borderRadius:'50%',background:'rgba(14,165,233,0.1)'}}/>
+                  <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}>
+                    <div style={{width:40,height:40,borderRadius:'50%',background:'linear-gradient(135deg,#C9A84C,#F5D485)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',fontWeight:800,color:'#1E293B'}}>ر</div>
+                    <div>
+                      <div style={{fontSize:'0.75rem',fontWeight:800,letterSpacing:'1px',opacity:0.9}}>الثروة كابيتال</div>
+                      <div style={{fontSize:'0.6rem',opacity:0.6}}>بوابة العملاء</div>
+                    </div>
+                  </div>
+                  <div style={{fontSize:'0.75rem',opacity:0.6,marginBottom:4}}>الاسم</div>
+                  <div style={{fontSize:'1rem',fontWeight:700,marginBottom:12}}>
+                    {form.clientId ? mockClients.find(c=>c.id.toString()===form.clientId)?.name||'—' : 'اختر العميل'}
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                    <div>
+                      <div style={{fontSize:'0.65rem',opacity:0.6,marginBottom:3}}>البريد الإلكتروني</div>
+                      <div style={{fontSize:'0.72rem',fontFamily:'monospace'}}>{form.email||'—'}</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:'0.65rem',opacity:0.6,marginBottom:3}}>كلمة المرور</div>
+                      <div style={{fontSize:'0.72rem',fontFamily:'monospace'}}>{'•'.repeat(Math.min(form.password.length,10))}</div>
+                    </div>
+                  </div>
+                  <div style={{marginTop:14,padding:'8px 12px',background:'rgba(255,255,255,0.08)',borderRadius:8,fontSize:'0.68rem',opacity:0.8}}>
+                    🔗 رابط الدخول: tharwahcapital.com/login
+                  </div>
+                </div>
+              </div>
+
+              <div style={{background:'rgba(0,217,126,0.06)',border:'1px solid rgba(0,217,126,0.2)',borderRadius:12,padding:16}}>
+                <div style={{fontSize:'0.8rem',fontWeight:700,color:'#00D97E',marginBottom:8}}>✅ بعد إنشاء الحساب:</div>
+                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                  {[
+                    'سيتمكن العميل من الدخول عبر صفحة /login',
+                    'سيرى أيقونة ملفه الشخصي في شريط الموقع',
+                    'سيصل إلى لوحة محفظته عبر /dashboard',
+                    'ستُرسل له بيانات الدخول إذا اخترت الإرسال',
+                  ].map((item,i)=>(
+                    <div key={i} style={{display:'flex',alignItems:'flex-start',gap:8,fontSize:'0.75rem',color:'#475569'}}>
+                      <span style={{color:'#00D97E',flexShrink:0,marginTop:2}}>•</span>{item}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* View Modal */}
       {viewClient && (
@@ -240,16 +555,19 @@ export default function Clients() {
                   {label:'تاريخ الانضمام',value:viewClient.joined},
                   {label:'آخر نشاط',value:viewClient.lastActive},
                   {label:'معرف العميل',value:'#'+viewClient.id},
-                ].map(f => (
+                ].map(f=>(
                   <div key={f.label} style={{background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,padding:'10px 12px'}}>
                     <div style={{fontSize:'0.65rem',color:'#64748B',fontWeight:600,marginBottom:4}}>{f.label}</div>
-                    <div style={{fontSize:'0.82rem',color:'#1E293B',fontFamily: f.label.includes('معرف')||f.label.includes('المحفظة')||f.label.includes('الهاتف') ? 'monospace' : 'inherit'}}>{f.value}</div>
+                    <div style={{fontSize:'0.82rem',color:'#1E293B',fontFamily:f.label.includes('معرف')||f.label.includes('المحفظة')||f.label.includes('الهاتف')?'monospace':'inherit'}}>{f.value}</div>
                   </div>
                 ))}
               </div>
               <div style={{display:'flex',gap:8,marginTop:16}}>
-                <button style={{flex:1,padding:'10px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>تعديل البيانات</button>
-                <button style={{flex:1,padding:'10px',background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',borderRadius:8,color:'#3B82F6',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>📧 مراسلة</button>
+                <button style={{flex:1,padding:'10px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFF',fontWeight:700,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>تعديل البيانات</button>
+                <button onClick={()=>{ setForm(f=>({...f,clientId:viewClient.id.toString(),email:viewClient.email.replace('@email.com','@tharwah.com')})); setViewClient(null); setMainTab('create_account') }}
+                  style={{flex:1,padding:'10px',background:'rgba(201,168,76,0.1)',border:'1px solid rgba(201,168,76,0.3)',borderRadius:8,color:'#C9A84C',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>
+                  🔑 إنشاء حساب
+                </button>
                 <button style={{flex:1,padding:'10px',background:'rgba(0,217,126,0.1)',border:'1px solid rgba(0,217,126,0.3)',borderRadius:8,color:'#00D97E',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.82rem'}}>📊 تقرير</button>
               </div>
             </div>

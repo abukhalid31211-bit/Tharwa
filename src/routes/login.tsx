@@ -1,8 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Lock, Mail, LogIn, Eye, EyeOff, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/login")({ component: Login });
+
+const CLIENT_ACCOUNTS = [
+  { id: 1, name: 'محمد الأحمد', email: 'mohammed@tharwah.com', password: 'Tharwah@2024', portfolioCode: 'PF-001', initial: 'م' },
+  { id: 2, name: 'سارة العمري', email: 'sara@tharwah.com', password: 'Sara@2024!', portfolioCode: 'PF-002', initial: 'س' },
+  { id: 3, name: 'طارق القحطاني', email: 'tariq@tharwah.com', password: 'Tariq@2024!', portfolioCode: 'PF-003', initial: 'ط' },
+  { id: 4, name: 'نورة الشمري', email: 'noura@tharwah.com', password: 'Noura@2024!', portfolioCode: 'PF-004', initial: 'ن' },
+  { id: 5, name: 'عبدالله السالم', email: 'abdullah@tharwah.com', password: 'Abdullah@2024', portfolioCode: 'PF-005', initial: 'ع' },
+  { id: 6, name: 'فاطمة الزهراني', email: 'fatima@tharwah.com', password: 'Fatima@2024', portfolioCode: 'PF-006', initial: 'ف' },
+]
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -10,15 +19,32 @@ function Login() {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!email || !pass) { setError("يرجى إدخال البريد الإلكتروني وكلمة المرور"); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1200));
     setLoading(false);
-    setError("بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.");
+
+    const found = CLIENT_ACCOUNTS.find(
+      a => a.email.toLowerCase() === email.toLowerCase().trim() && a.password === pass
+    );
+
+    if (found) {
+      localStorage.setItem('tharwah_client_auth', JSON.stringify({
+        id: found.id,
+        name: found.name,
+        email: found.email,
+        portfolioCode: found.portfolioCode,
+        initial: found.initial,
+      }));
+      navigate({ to: '/dashboard' });
+    } else {
+      setError("بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.");
+    }
   };
 
   return (
@@ -52,7 +78,7 @@ function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="email@example.com"
+                  placeholder="client@tharwah.com"
                   className="w-full rounded-xl border border-border bg-white py-3 pr-10 pl-4 text-sm placeholder:text-text-muted focus:border-gold focus:outline-none"
                 />
               </div>
