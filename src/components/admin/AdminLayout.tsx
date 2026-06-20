@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bell, LogOut, Settings, Menu, X, Search, ChevronRight, TrendingUp, Users, FileText, MessageSquare, BarChart2, Shield, Home, Briefcase, CreditCard, Bell as BellIcon, UserCheck, Lock, Layout, HelpCircle, Star, Palette, Info, Globe, Ticket } from 'lucide-react'
+import { Bell, LogOut, Settings, Menu, X, Search, ChevronRight, TrendingUp, Users, FileText, MessageSquare, BarChart2, Shield, Home, Briefcase, CreditCard, Bell as BellIcon, UserCheck, Lock, Layout, HelpCircle, Star, Palette, Info, Globe, Ticket, UserCog } from 'lucide-react'
 import Overview from './pages/Overview'
 import Clients from './pages/Clients'
 import Portfolios from './pages/Portfolios'
@@ -18,13 +18,20 @@ import FAQManager from './pages/FAQManager'
 import TestimonialsManager from './pages/TestimonialsManager'
 import SiteDesign from './pages/SiteDesign'
 import AboutManager from './pages/AboutManager'
+import SubAdmins from './pages/SubAdmins'
 import { mockNotifications } from './adminData'
 
-type Page = 'overview'|'clients'|'portfolios'|'transactions'|'messages'|'content'|'reports'|'team'|'notifications'|'settings'|'security'|'hero'|'services_mgr'|'markets_mgr'|'faq_mgr'|'testimonials'|'site_design'|'about_mgr'
+type Page = 'overview'|'clients'|'portfolios'|'transactions'|'messages'|'content'|'reports'|'team'|'notifications'|'settings'|'security'|'hero'|'services_mgr'|'markets_mgr'|'faq_mgr'|'testimonials'|'site_design'|'about_mgr'|'sub_admins'
 
-interface Props { onLogout: () => void }
+interface Props {
+  onLogout: () => void
+  role: 'super' | 'sub'
+}
 
-const navGroups = [
+// Pages sub-admins are allowed to access
+const SUB_ADMIN_ALLOWED: Page[] = ['clients', 'portfolios', 'transactions']
+
+const superNavGroups = [
   { title: 'الرئيسية', items: [
     { key: 'overview', Icon: Home, label: 'لوحة التحكم' },
   ]},
@@ -53,6 +60,17 @@ const navGroups = [
     { key: 'settings', Icon: Settings, label: 'الإعدادات' },
     { key: 'security', Icon: Lock, label: 'الأمان' },
   ]},
+  { title: 'إدارة الصلاحيات', items: [
+    { key: 'sub_admins', Icon: UserCog, label: 'إضافة مشرف' },
+  ]},
+]
+
+const subNavGroups = [
+  { title: 'إدارة العملاء ومحافظهم', items: [
+    { key: 'clients', Icon: Users, label: 'العملاء والحسابات', badge: 3 },
+    { key: 'portfolios', Icon: Briefcase, label: 'المحافظ الاستثمارية' },
+    { key: 'transactions', Icon: CreditCard, label: 'العمليات', badge: 7 },
+  ]},
 ]
 
 const pageTitles: Record<Page,string> = {
@@ -63,18 +81,31 @@ const pageTitles: Record<Page,string> = {
   hero:'قسم البطل',services_mgr:'إدارة الخدمات',markets_mgr:'إدارة الأسواق',
   faq_mgr:'الأسئلة الشائعة',testimonials:'الشهادات',
   site_design:'التصميم والتنقل',about_mgr:'صفحة من نحن',
+  sub_admins:'إدارة المشرفين',
 }
 
-export default function AdminLayout({ onLogout }: Props) {
-  const [page, setPage] = useState<Page>('overview')
+export default function AdminLayout({ onLogout, role }: Props) {
+  const isSuper = role === 'super'
+  const defaultPage: Page = isSuper ? 'overview' : 'clients'
+  const navGroups = isSuper ? superNavGroups : subNavGroups
+
+  const [page, setPage] = useState<Page>(defaultPage)
   const [collapsed, setCollapsed] = useState(false)
   const [showNotif, setShowNotif] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [search, setSearch] = useState('')
   const unread = mockNotifications.filter(n=>!n.read).length
 
+  const adminName = isSuper
+    ? 'أحمد المشرف'
+    : (localStorage.getItem('admin_name') || 'مشرف')
+  const adminEmail = localStorage.getItem('admin_email') || ''
+
+  // Guard: if sub-admin tries to navigate to a non-allowed page, redirect
+  const safePage: Page = (!isSuper && !SUB_ADMIN_ALLOWED.includes(page)) ? 'clients' : page
+
   const renderPage = () => {
-    switch(page) {
+    switch(safePage) {
       case 'overview': return <Overview />
       case 'clients': return <Clients />
       case 'portfolios': return <Portfolios />
@@ -93,8 +124,15 @@ export default function AdminLayout({ onLogout }: Props) {
       case 'testimonials': return <TestimonialsManager />
       case 'site_design': return <SiteDesign />
       case 'about_mgr': return <AboutManager />
-      default: return <Overview />
+      case 'sub_admins': return isSuper ? <SubAdmins /> : <Clients />
+      default: return isSuper ? <Overview /> : <Clients />
     }
+  }
+
+  const handleNavClick = (key: string) => {
+    const target = key as Page
+    if (!isSuper && !SUB_ADMIN_ALLOWED.includes(target)) return
+    setPage(target)
   }
 
   return (
@@ -131,6 +169,15 @@ export default function AdminLayout({ onLogout }: Props) {
           </button>
         )}
 
+        {/* Role badge */}
+        {!collapsed && (
+          <div style={{ margin:'6px 12px 2px', padding:'5px 10px', borderRadius:8, background: isSuper ? 'rgba(201,168,76,0.12)' : 'rgba(14,165,233,0.08)', border: `1px solid ${isSuper ? 'rgba(201,168,76,0.3)' : 'rgba(14,165,233,0.2)'}`, display:'flex', alignItems:'center', gap:6 }}>
+            <span style={{ fontSize:'0.65rem', fontWeight:700, color: isSuper ? '#C9A84C' : '#0EA5E9', whiteSpace:'nowrap' }}>
+              {isSuper ? '👑 Super Admin' : '🔵 مشرف فرعي'}
+            </span>
+          </div>
+        )}
+
         {/* Nav */}
         <nav style={{ flex:1, overflowY:'auto', overflowX:'hidden', padding:'4px 0', scrollbarWidth:'none' }}>
           {navGroups.map(group => (
@@ -141,26 +188,28 @@ export default function AdminLayout({ onLogout }: Props) {
                 </div>
               )}
               {group.items.map(item => {
-                const isActive = page === item.key
+                const isActive = safePage === item.key
                 const { Icon } = item
+                const isSubAdminsItem = item.key === 'sub_admins'
                 return (
                   <button key={item.key}
-                    onClick={()=>setPage(item.key as Page)}
+                    onClick={()=>handleNavClick(item.key)}
                     title={collapsed ? item.label : undefined}
                     style={{
                       width:'100%', display:'flex', alignItems:'center', gap:9,
                       padding: collapsed ? '9px 0' : '9px 14px',
-                      background: isActive ? 'rgba(14,165,233,0.1)' : 'transparent',
-                      border:'none', borderRight: isActive ? '2px solid #C9A84C' : '2px solid transparent',
+                      background: isActive ? 'rgba(14,165,233,0.1)' : (isSubAdminsItem && !isActive ? 'rgba(201,168,76,0.05)' : 'transparent'),
+                      border:'none',
+                      borderRight: isActive ? '2px solid #C9A84C' : (isSubAdminsItem ? '2px solid rgba(201,168,76,0.3)' : '2px solid transparent'),
                       borderLeft:'none', cursor:'pointer',
-                      color: isActive ? '#0EA5E9' : '#475569',
-                      fontSize:'0.82rem', fontWeight: isActive ? 700 : 400,
+                      color: isActive ? '#0EA5E9' : (isSubAdminsItem ? '#C9A84C' : '#475569'),
+                      fontSize:'0.82rem', fontWeight: isActive ? 700 : (isSubAdminsItem ? 600 : 400),
                       fontFamily:"'Cairo',sans-serif", transition:'all 0.15s',
                       textAlign:'right', justifyContent: collapsed ? 'center' : 'flex-start',
                       position:'relative',
                     }}
                     onMouseEnter={e=>{if(!isActive){e.currentTarget.style.color='#0EA5E9';e.currentTarget.style.background='rgba(14,165,233,0.05)'}}}
-                    onMouseLeave={e=>{if(!isActive){e.currentTarget.style.color='#475569';e.currentTarget.style.background='transparent'}}}>
+                    onMouseLeave={e=>{if(!isActive){e.currentTarget.style.color=isSubAdminsItem?'#C9A84C':'#475569';e.currentTarget.style.background=isSubAdminsItem?'rgba(201,168,76,0.05)':'transparent'}}}>
                     <Icon size={16} style={{ flexShrink:0 }} />
                     {!collapsed && <>
                       <span style={{ flex:1, whiteSpace:'nowrap' }}>{item.label}</span>
@@ -183,19 +232,28 @@ export default function AdminLayout({ onLogout }: Props) {
         <div style={{ padding:'10px 8px', borderTop:'1px solid #E2E8F0', position:'relative' }}>
           <button onClick={()=>setShowUserMenu(!showUserMenu)}
             style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:8, background:'rgba(14,165,233,0.06)', border:'1px solid rgba(14,165,233,0.15)', borderRadius:8, cursor:'pointer', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-            <div style={{ width:28, height:28, borderRadius:'50%', background:'linear-gradient(135deg,#0EA5E9,#38BDF8)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:800, color:'#FFFFFF', flexShrink:0 }}>أ</div>
+            <div style={{ width:28, height:28, borderRadius:'50%', background: isSuper ? 'linear-gradient(135deg,#C9A84C,#E8C96A)' : 'linear-gradient(135deg,#0EA5E9,#38BDF8)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.75rem', fontWeight:800, color:'#FFFFFF', flexShrink:0 }}>
+              {adminName.charAt(0)}
+            </div>
             {!collapsed && <div style={{ flex:1, textAlign:'right' }}>
-              <div style={{ fontSize:'0.75rem', fontWeight:700, color:'#1E293B', whiteSpace:'nowrap' }}>أحمد المشرف</div>
-              <div style={{ fontSize:'0.58rem', color:'#0EA5E9' }}>Super Admin</div>
+              <div style={{ fontSize:'0.75rem', fontWeight:700, color:'#1E293B', whiteSpace:'nowrap' }}>{adminName}</div>
+              <div style={{ fontSize:'0.58rem', color: isSuper ? '#C9A84C' : '#0EA5E9' }}>{isSuper ? 'Super Admin' : 'مشرف فرعي'}</div>
             </div>}
           </button>
           {showUserMenu && !collapsed && (
             <div style={{ position:'absolute', bottom:'100%', right:8, left:8, marginBottom:4, background:'#FFFFFF', border:'1px solid #E2E8F0', borderRadius:8, overflow:'hidden', zIndex:200 }}>
-              <button onClick={()=>{setPage('settings');setShowUserMenu(false)}} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#1E293B', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
-                onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.08)'}
-                onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                <Settings size={13} color="#64748B" /> الإعدادات
-              </button>
+              {isSuper && (
+                <button onClick={()=>{setPage('settings');setShowUserMenu(false)}} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#1E293B', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
+                  onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.08)'}
+                  onMouseLeave={e=>e.currentTarget.style.background='none'}>
+                  <Settings size={13} color="#64748B" /> الإعدادات
+                </button>
+              )}
+              {!collapsed && adminEmail && (
+                <div style={{ padding:'6px 12px', fontSize:'0.7rem', color:'#94A3B8', borderTop: isSuper ? '1px solid #CBD5E1' : 'none', fontFamily:'monospace' }}>
+                  {adminEmail}
+                </div>
+              )}
               <div style={{ height:1, background:'#CBD5E1' }} />
               <button onClick={onLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 12px', background:'none', border:'none', color:'#FF4560', fontSize:'0.8rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}
                 onMouseEnter={e=>e.currentTarget.style.background='rgba(255,69,96,0.08)'}
@@ -214,7 +272,7 @@ export default function AdminLayout({ onLogout }: Props) {
           <div style={{ display:'flex', alignItems:'center', gap:6, fontSize:'0.8rem', color:'#64748B' }}>
             <span>Golden Horizon</span>
             <ChevronRight size={12} />
-            <span style={{ color:'#1E293B', fontWeight:600 }}>{pageTitles[page]}</span>
+            <span style={{ color:'#1E293B', fontWeight:600 }}>{pageTitles[safePage]}</span>
           </div>
 
           <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, maxWidth:360 }}>
@@ -230,35 +288,37 @@ export default function AdminLayout({ onLogout }: Props) {
               <span style={{ width:6, height:6, borderRadius:'50%', background:'#00D97E', display:'inline-block', animation:'blink 1.5s infinite' }} />
               مباشر
             </div>
-            <div style={{ position:'relative' }}>
-              <button onClick={()=>setShowNotif(!showNotif)} style={{ width:36, height:36, background: showNotif ? 'rgba(14,165,233,0.1)' : '#F1F5F9', border:`1px solid ${showNotif ? 'rgba(14,165,233,0.3)' : '#E2E8F0'}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#64748B', position:'relative' }}>
-                <Bell size={15} />
-                {unread > 0 && <span style={{ position:'absolute', top:5, left:5, width:7, height:7, background:'#FF4560', border:'2px solid #FFFFFF', borderRadius:'50%' }} />}
-              </button>
-              {showNotif && (
-                <div style={{ position:'absolute', top:'100%', left:0, marginTop:8, width:320, background:'#FFFFFF', border:'1px solid #E2E8F0', borderRadius:12, boxShadow:'0 8px 30px rgba(0,0,0,0.12)', zIndex:200, overflow:'hidden' }}>
-                  <div style={{ padding:'12px 14px', borderBottom:'1px solid #E2E8F0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <span style={{ fontWeight:700, fontSize:'0.85rem' }}>الإشعارات</span>
-                    <span style={{ fontSize:'0.7rem', color:'#0EA5E9', cursor:'pointer' }}>تعليم الكل مقروء</span>
-                  </div>
-                  {mockNotifications.slice(0,5).map(n => (
-                    <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 14px', borderBottom:'1px solid rgba(203,213,225,0.5)', cursor:'pointer', background: !n.read ? 'rgba(14,165,233,0.03)' : 'transparent' }}
-                      onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.06)'}
-                      onMouseLeave={e=>e.currentTarget.style.background=!n.read?'rgba(14,165,233,0.03)':'transparent'}>
-                      <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{n.icon}</span>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:'0.78rem', fontWeight:600, color:'#1E293B' }}>{n.title}</div>
-                        <div style={{ fontSize:'0.7rem', color:'#64748B', marginTop:2 }}>{n.desc}</div>
-                      </div>
-                      <div style={{ fontSize:'0.65rem', color:'#94A3B8', flexShrink:0 }}>{n.time}</div>
+            {isSuper && (
+              <div style={{ position:'relative' }}>
+                <button onClick={()=>setShowNotif(!showNotif)} style={{ width:36, height:36, background: showNotif ? 'rgba(14,165,233,0.1)' : '#F1F5F9', border:`1px solid ${showNotif ? 'rgba(14,165,233,0.3)' : '#E2E8F0'}`, borderRadius:8, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#64748B', position:'relative' }}>
+                  <Bell size={15} />
+                  {unread > 0 && <span style={{ position:'absolute', top:5, left:5, width:7, height:7, background:'#FF4560', border:'2px solid #FFFFFF', borderRadius:'50%' }} />}
+                </button>
+                {showNotif && (
+                  <div style={{ position:'absolute', top:'100%', left:0, marginTop:8, width:320, background:'#FFFFFF', border:'1px solid #E2E8F0', borderRadius:12, boxShadow:'0 8px 30px rgba(0,0,0,0.12)', zIndex:200, overflow:'hidden' }}>
+                    <div style={{ padding:'12px 14px', borderBottom:'1px solid #E2E8F0', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                      <span style={{ fontWeight:700, fontSize:'0.85rem' }}>الإشعارات</span>
+                      <span style={{ fontSize:'0.7rem', color:'#0EA5E9', cursor:'pointer' }}>تعليم الكل مقروء</span>
                     </div>
-                  ))}
-                  <button onClick={()=>{setPage('notifications');setShowNotif(false)}} style={{ width:'100%', padding:'10px', background:'none', border:'none', color:'#0EA5E9', fontSize:'0.78rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", borderTop:'1px solid #E2E8F0' }}>
-                    عرض الكل
-                  </button>
-                </div>
-              )}
-            </div>
+                    {mockNotifications.slice(0,5).map(n => (
+                      <div key={n.id} style={{ display:'flex', gap:10, padding:'10px 14px', borderBottom:'1px solid rgba(203,213,225,0.5)', cursor:'pointer', background: !n.read ? 'rgba(14,165,233,0.03)' : 'transparent' }}
+                        onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.06)'}
+                        onMouseLeave={e=>e.currentTarget.style.background=!n.read?'rgba(14,165,233,0.03)':'transparent'}>
+                        <span style={{ fontSize:'1.1rem', flexShrink:0 }}>{n.icon}</span>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:'0.78rem', fontWeight:600, color:'#1E293B' }}>{n.title}</div>
+                          <div style={{ fontSize:'0.7rem', color:'#64748B', marginTop:2 }}>{n.desc}</div>
+                        </div>
+                        <div style={{ fontSize:'0.65rem', color:'#94A3B8', flexShrink:0 }}>{n.time}</div>
+                      </div>
+                    ))}
+                    <button onClick={()=>{setPage('notifications');setShowNotif(false)}} style={{ width:'100%', padding:'10px', background:'none', border:'none', color:'#0EA5E9', fontSize:'0.78rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", borderTop:'1px solid #E2E8F0' }}>
+                      عرض الكل
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </header>
 
