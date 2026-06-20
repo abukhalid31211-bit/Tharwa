@@ -62,8 +62,8 @@ export default function Reports() {
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartRevenue}>
-              <XAxis dataKey="month" tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
+              <XAxis dataKey="month" tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
               <Tooltip contentStyle={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.75rem'}}/>
               <CartesianGrid stroke="rgba(203,213,225,0.5)" strokeDasharray="3 3"/>
               <Bar dataKey="revenue" fill="#3B82F6" radius={[3,3,0,0]} name="إيرادات"/>
@@ -99,8 +99,8 @@ export default function Reports() {
           <ResponsiveContainer width="100%" height={180}>
             <AreaChart data={chartAUM}>
               <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C9A84C" stopOpacity={0.3}/><stop offset="95%" stopColor="#C9A84C" stopOpacity={0}/></linearGradient></defs>
-              <XAxis dataKey="month" tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
+              <XAxis dataKey="month" tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
               <Tooltip contentStyle={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.75rem'}}/>
               <CartesianGrid stroke="rgba(203,213,225,0.5)" strokeDasharray="3 3"/>
               <Area type="monotone" dataKey="aum" stroke="#C9A84C" strokeWidth={2} fill="url(#g)"/>
@@ -111,8 +111,8 @@ export default function Reports() {
           <div style={{fontSize:'0.875rem',fontWeight:700,color:'#1E293B',marginBottom:14}}>عملاء جدد</div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={chartNewClients}>
-              <XAxis dataKey="month" tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
-              <YAxis tick={{fill:"#94A3B8"',fontSize:10}} axisLine={false} tickLine={false}/>
+              <XAxis dataKey="month" tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis tick={{fill:"#94A3B8",fontSize:10}} axisLine={false} tickLine={false}/>
               <Tooltip contentStyle={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.75rem'}}/>
               <CartesianGrid stroke="rgba(203,213,225,0.5)" strokeDasharray="3 3"/>
               <Bar dataKey="clients" fill="#3B82F6" radius={[3,3,0,0]} name="عملاء جدد"/>
