@@ -412,6 +412,26 @@ interface LangCtx {
 
 const translations: Record<'ar' | 'en', Translations> = { ar, en }
 
+/** Read ?lang= from the URL, fall back to localStorage */
+function getInitialLang(): 'ar' | 'en' {
+  if (typeof window !== 'undefined') {
+    const param = new URLSearchParams(window.location.search).get('lang')
+    if (param === 'ar' || param === 'en') {
+      setLang(param) // keep localStorage in sync
+      return param
+    }
+  }
+  return getLang()
+}
+
+/** Write ?lang= into the current URL without a page reload */
+function patchUrlLang(lang: 'ar' | 'en') {
+  if (typeof window === 'undefined') return
+  const url = new URL(window.location.href)
+  url.searchParams.set('lang', lang)
+  window.history.replaceState({}, '', url.toString())
+}
+
 const LangContext = createContext<LangCtx>({
   lang: 'ar',
   t: (k) => ar[k],
@@ -419,7 +439,7 @@ const LangContext = createContext<LangCtx>({
 })
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<'ar' | 'en'>(getLang())
+  const [lang, setLangState] = useState<'ar' | 'en'>(getInitialLang)
 
   useEffect(() => {
     document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'
@@ -430,7 +450,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const toggleLang = () => {
     const next: 'ar' | 'en' = lang === 'ar' ? 'en' : 'ar'
     setLangState(next)
-    setLang(next)
+    setLang(next)          // persist to localStorage
+    patchUrlLang(next)     // reflect in URL immediately
   }
 
   const t = (key: TranslationKey): string => translations[lang][key] ?? translations.ar[key]
@@ -443,3 +464,14 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 }
 
 export const useLang = () => useContext(LangContext)
+
+/** Drop this component anywhere inside LanguageProvider.
+ *  It re-stamps ?lang=xx whenever TanStack Router changes the pathname,
+ *  so the language is always visible in the URL after navigation. */
+export function LangUrlSync({ pathname }: { pathname: string }) {
+  const { lang } = useLang()
+  useEffect(() => {
+    patchUrlLang(lang)
+  }, [pathname, lang])
+  return null
+}
