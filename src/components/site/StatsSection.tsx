@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "../../contexts/LanguageContext";
 
 function useCountUp(target: number, duration = 2000) {
   const [val, setVal] = useState(0);
@@ -28,13 +29,15 @@ function useCountUp(target: number, duration = 2000) {
   return { ref, val };
 }
 
-function Stat({ value, suffix = "", prefix = "", label }: { value: number; suffix?: string; prefix?: string; label: string }) {
+function Stat({ value, suffix = "", prefix = "", label, locale }: { value: number; suffix?: string; prefix?: string; label: string; locale: string }) {
   const { ref, val } = useCountUp(value);
   return (
     <div ref={ref} className="text-center px-6 py-10 border-l border-border/60 last:border-l-0">
       <div className="font-display text-5xl md:text-6xl font-black text-gradient-gold leading-none">
         {prefix}
-        <span className="font-mono">{val.toLocaleString("en-US")}</span>
+        <span dir="ltr" style={{ unicodeBidi: "isolate" }} className="font-mono">
+          {val.toLocaleString(locale)}
+        </span>
         {suffix}
       </div>
       <div className="mt-3 text-sm font-semibold text-text-muted tracking-wide">{label}</div>
@@ -43,13 +46,16 @@ function Stat({ value, suffix = "", prefix = "", label }: { value: number; suffi
 }
 
 export function StatsSection() {
+  const { t, lang } = useLang();
+  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
+
   return (
     <section className="border-y border-gold/30 bg-gradient-navy">
       <div className="mx-auto max-w-7xl grid grid-cols-2 lg:grid-cols-4">
-        <Stat value={5000} prefix="+" suffix="" label="عميل حول العالم" />
-        <Stat value={2} prefix="+$" suffix="B" label="أصول تحت الإدارة" />
-        <Stat value={15} prefix="+" suffix=" سنة" label="خبرة في الأسواق" />
-        <Stat value={98} suffix="%" label="نسبة رضا العملاء" />
+        <Stat value={5000} prefix="+" suffix="" label={t('stats_clients')} locale={locale} />
+        <Stat value={2} prefix="+$" suffix="B" label={t('stats_assets')} locale={locale} />
+        <Stat value={15} prefix="+" suffix={t('stats_years_suffix')} label={t('stats_experience')} locale={locale} />
+        <Stat value={98} suffix="%" label={t('stats_satisfaction')} locale={locale} />
       </div>
     </section>
   );
