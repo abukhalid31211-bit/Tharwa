@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Plus, Download, X, Eye, Edit, Trash2, Key, UserPlus, Shield, Copy, Check, RefreshCw } from 'lucide-react'
 import { mockClients, mockClientAccounts, statusLabels } from '../adminData'
+import { getLiveClients, setLiveClients } from '../../../lib/store'
 
 const C = {
   card: { background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:14, overflow:'hidden' } as React.CSSProperties,
@@ -43,7 +44,10 @@ export default function Clients() {
   const [viewClient, setViewClient] = useState<typeof mockClients[0]|null>(null)
   const [editClient, setEditClient] = useState<typeof mockClients[0]|null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number|null>(null)
-  const [clients, setClients] = useState([...mockClients])
+  const [clients, setClients] = useState(() => {
+    const live = getLiveClients<typeof mockClients[0]>()
+    return live.length > 0 ? live : [...mockClients]
+  })
   const [accounts, setAccounts] = useState([...mockClientAccounts])
   const [kycAction, setKycAction] = useState<Record<number,string>>({})
   const [toast, setToast] = useState<{msg:string;type:'ok'|'err'}|null>(null)
@@ -57,14 +61,26 @@ export default function Clients() {
     setTimeout(()=>setToast(null),3000)
   }
 
+  useEffect(() => {
+    setLiveClients(clients)
+  }, [clients])
+
   const handleKYC = (id:number, action:'accept'|'reject') => {
     setKycAction(p=>({...p,[id]:action}))
-    setClients(prev=>prev.map(c=>c.id===id?{...c,status:action==='accept'?'active':'inactive'}:c))
+    setClients(prev=>{
+      const next = prev.map(c=>c.id===id?{...c,status:action==='accept'?'active':'inactive'}:c)
+      setLiveClients(next)
+      return next
+    })
     showToast(action==='accept'?'✅ تم قبول العميل بنجاح':'❌ تم رفض طلب العميل')
   }
 
   const handleDeleteClient = (id:number) => {
-    setClients(prev=>prev.filter(c=>c.id!==id))
+    setClients(prev=>{
+      const next = prev.filter(c=>c.id!==id)
+      setLiveClients(next)
+      return next
+    })
     setDeleteConfirmId(null)
     showToast('🗑️ تم حذف العميل بنجاح')
   }
