@@ -1,22 +1,33 @@
 import { Phone, ClipboardList, Briefcase, LineChart } from "lucide-react";
+import { useLang } from "../../contexts/LanguageContext";
 
-const steps = [
+const stepsAr = [
   { icon: Phone, t: "تواصل معنا", d: "حدد موعد استشارة مجانية مع أحد مستشارينا الماليين." },
   { icon: ClipboardList, t: "دراسة احتياجاتك", d: "نحلل أهدافك المالية وقدرتك على تحمل المخاطر بدقة." },
   { icon: Briefcase, t: "وضع الخطة", d: "نصمم محفظة استثمارية مخصصة تلائم تطلعاتك بالضبط." },
   { icon: LineChart, t: "متابعة وتقارير", d: "تقارير دورية مفصلة ومتابعة لحظية لأداء استثماراتك." },
 ];
 
+const stepsEn = [
+  { icon: Phone, t: "Contact Us", d: "Schedule a free consultation with one of our financial advisors." },
+  { icon: ClipboardList, t: "Assess Your Needs", d: "We analyze your financial goals and risk tolerance in detail." },
+  { icon: Briefcase, t: "Build the Plan", d: "We design a customized investment portfolio that precisely fits your aspirations." },
+  { icon: LineChart, t: "Monitor & Report", d: "Detailed periodic reports and real-time tracking of your investment performance." },
+];
+
 export function HowItWorks() {
+  const { t, lang } = useLang();
+  const steps = lang === 'ar' ? stepsAr : stepsEn;
+
   return (
     <section className="py-24 lg:py-32 bg-navy-mid/40 border-y border-border">
       <div className="mx-auto max-w-7xl px-5 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <span className="inline-block text-xs font-black tracking-[0.3em] text-gold uppercase">العملية</span>
+          <span className="inline-block text-xs font-black tracking-[0.3em] text-gold uppercase">{t('how_label')}</span>
           <h2 className="mt-4 text-4xl md:text-5xl font-black text-text-light">
-            كيف تعمل <span className="text-gradient-gold">معنا؟</span>
+            {t('how_heading')} <span className="text-gradient-gold">{t('how_heading_gold')}</span>
           </h2>
-          <p className="mt-5 text-text-muted text-lg">أربع خطوات بسيطة تفصلك عن بداية رحلتك الاستثمارية معنا.</p>
+          <p className="mt-5 text-text-muted text-lg">{t('how_desc')}</p>
         </div>
 
         <div className="relative grid gap-10 md:grid-cols-2 lg:grid-cols-4">
