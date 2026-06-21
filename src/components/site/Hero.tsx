@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, BarChart3, Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "../../contexts/LanguageContext";
 
-function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
+function CountUp({ target, suffix = "", locale }: { target: number; suffix?: string; locale: string }) {
   const [val, setVal] = useState(0);
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -24,16 +25,30 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [target]);
-  return <span ref={ref}>{val.toLocaleString("ar-EG")}{suffix}</span>;
+  return (
+    <span ref={ref} dir="ltr" style={{ unicodeBidi: "isolate" }}>
+      {val.toLocaleString(locale)}{suffix}
+    </span>
+  );
 }
 
-const miniStats = [
+const miniStatsAr = [
   { icon: "🌍", value: 15, suffix: "+", label: "سوق عالمي" },
   { icon: "💼", value: 5000, suffix: "+", label: "مستثمر" },
   { icon: "📈", value: 98, suffix: ".5%", label: "نسبة نجاح" },
 ];
+const miniStatsEn = [
+  { icon: "🌍", value: 15, suffix: "+", label: "Global Markets" },
+  { icon: "💼", value: 5000, suffix: "+", label: "Investors" },
+  { icon: "📈", value: 98, suffix: ".5%", label: "Success Rate" },
+];
 
 export function Hero() {
+  const { lang } = useLang();
+  const isAr = lang === "ar";
+  const locale = isAr ? "ar-EG" : "en-US";
+  const miniStats = isAr ? miniStatsAr : miniStatsEn;
+
   const [typed, setTyped] = useState("");
   const full = "استثماراتك";
   useEffect(() => {
@@ -120,7 +135,7 @@ export function Hero() {
                 <span className="text-2xl">{s.icon}</span>
                 <div>
                   <div className="font-mono text-xl font-black text-gold">
-                    <CountUp target={s.value} suffix={s.suffix} />
+                    <CountUp target={s.value} suffix={s.suffix} locale={locale} />
                   </div>
                   <div className="text-[11px] text-text-muted">{s.label}</div>
                 </div>
