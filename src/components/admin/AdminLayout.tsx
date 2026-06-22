@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell, LogOut, Settings, Menu, X, Search, ChevronRight, TrendingUp, Users, FileText, MessageSquare, BarChart2, Shield, Home, Briefcase, CreditCard, Bell as BellIcon, UserCheck, Lock, Layout, HelpCircle, Star, Palette, Info, Globe, Ticket, UserCog, ShieldCheck } from 'lucide-react'
 import Overview from './pages/Overview'
 import Clients from './pages/Clients'
@@ -21,6 +21,7 @@ import AboutManager from './pages/AboutManager'
 import SubAdmins from './pages/SubAdmins'
 import PrivacyPolicyManager from './pages/PrivacyPolicyManager'
 import { mockNotifications } from './adminData'
+import { getContactMessages } from '../../lib/store'
 
 type Page = 'overview'|'clients'|'portfolios'|'transactions'|'messages'|'content'|'reports'|'team'|'notifications'|'settings'|'security'|'hero'|'services_mgr'|'markets_mgr'|'faq_mgr'|'testimonials'|'site_design'|'about_mgr'|'sub_admins'|'privacy_policy'
 
@@ -39,7 +40,7 @@ const superNavGroups = [
     { key: 'clients', Icon: Users, label: 'العملاء والحسابات', badge: 3 },
     { key: 'portfolios', Icon: Briefcase, label: 'المحافظ الاستثمارية' },
     { key: 'transactions', Icon: CreditCard, label: 'العمليات', badge: 7 },
-    { key: 'messages', Icon: MessageSquare, label: 'الرسائل', badge: 3 },
+    { key: 'messages', Icon: MessageSquare, label: 'الرسائل', badge: 0 },
   ]},
   { title: 'المنصة', items: [
     { key: 'content', Icon: FileText, label: 'المحتوى' },
@@ -95,7 +96,14 @@ export default function AdminLayout({ onLogout, role }: Props) {
   const [showNotif, setShowNotif] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [search, setSearch] = useState('')
+  const [contactNewCount, setContactNewCount] = useState(() => getContactMessages().filter(m => m.status === 'new').length)
   const unread = mockNotifications.filter(n=>!n.read).length
+
+  useEffect(() => {
+    const update = () => setContactNewCount(getContactMessages().filter(m => m.status === 'new').length)
+    window.addEventListener('tharwah_contact_messages_changed', update)
+    return () => window.removeEventListener('tharwah_contact_messages_changed', update)
+  }, [])
 
   const adminName = isSuper
     ? 'أحمد المشرف'
@@ -214,11 +222,11 @@ export default function AdminLayout({ onLogout, role }: Props) {
                     <Icon size={16} style={{ flexShrink:0 }} />
                     {!collapsed && <>
                       <span style={{ flex:1, whiteSpace:'nowrap' }}>{item.label}</span>
-                      {(item as {badge?:number}).badge! > 0 && (
-                        <span style={{ background:'#FF4560', color:'white', borderRadius:10, padding:'1px 6px', fontSize:'0.6rem', fontWeight:700 }}>{(item as {badge?:number}).badge}</span>
+                      {(item.key === 'messages' ? contactNewCount : (item as {badge?:number}).badge!) > 0 && (
+                        <span style={{ background:'#FF4560', color:'white', borderRadius:10, padding:'1px 6px', fontSize:'0.6rem', fontWeight:700 }}>{item.key === 'messages' ? contactNewCount : (item as {badge?:number}).badge}</span>
                       )}
                     </>}
-                    {collapsed && (item as {badge?:number}).badge! > 0 && (
+                    {collapsed && (item.key === 'messages' ? contactNewCount : (item as {badge?:number}).badge!) > 0 && (
                       <span style={{ position:'absolute', top:4, right:8, width:6, height:6, background:'#FF4560', borderRadius:'50%' }} />
                     )}
                   </button>
