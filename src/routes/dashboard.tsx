@@ -9,7 +9,7 @@ import {
   Activity, Home, Eye, EyeOff, Copy, Check, Download,
   Info, Star, Landmark
 } from "lucide-react";
-import { getLiveClients, getLiveTransactions, getSiteName } from "../lib/store";
+import { getLiveClients, getLiveTransactions, getSiteName, addContactMessage } from "../lib/store";
 
 export const Route = createFileRoute("/dashboard")({ component: Dashboard });
 
@@ -843,7 +843,7 @@ function Dashboard() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={e => { e.preventDefault(); if(supportMsg.trim()) setSupportSent(true); }}>
+                  <form onSubmit={e => { e.preventDefault(); if(supportMsg.trim()) { addContactMessage({ name: clientAuth?.name ?? personal.fullName, email: clientAuth?.email ?? personal.email, phone: personal.phone, service: "دعم العملاء", message: supportMsg, source: "support" }); setSupportSent(true); } }}>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
                       {[
                         { label:"استفسار عام", icon:"❓" },
