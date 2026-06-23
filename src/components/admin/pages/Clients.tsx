@@ -147,13 +147,70 @@ export default function Clients() {
 
   const handleSaveAccount = (e: React.FormEvent) => {
     e.preventDefault()
+
+    const today = new Date().toISOString().split('T')[0]
+    const isCustom = form.clientId === 'custom'
+    const clientName = isCustom ? form.customClientName : clients.find(c => c.id.toString() === form.clientId)?.name || ''
+    const accountStatus = form.status === 'custom' ? (form.customStatus || 'active') : form.status
+
+    let linkedClientId: number
+
+    if (isCustom) {
+      // إنشاء عميل جديد وإضافته للقائمة
+      const newClientId = Date.now()
+      const newClient = {
+        id: newClientId,
+        name: form.customClientName,
+        email: form.email,
+        phone: '',
+        country: '🌍',
+        city: '',
+        advisor: 'أحمد المشرف',
+        portfolio: 0,
+        status: accountStatus as string,
+        category: 'standard',
+        joined: today,
+        lastActive: 'اليوم',
+      }
+      const updatedClients = [...clients, newClient]
+      setClients(updatedClients)
+      setLiveClients(updatedClients)
+      linkedClientId = newClientId
+    } else {
+      linkedClientId = parseInt(form.clientId)
+    }
+
+    // إنشاء حساب دخول جديد
+    const portfolioNum = accounts.length + 1
+    const newAccount = {
+      id: Date.now() + 1,
+      clientId: linkedClientId,
+      name: clientName,
+      email: form.email,
+      password: form.password,
+      phone: clients.find(c => c.id === linkedClientId)?.phone || '',
+      status: accountStatus,
+      portfolioCode: `PF-${String(portfolioNum).padStart(3, '0')}`,
+      createdAt: today,
+      createdBy: 'أحمد المشرف',
+      lastLogin: '—',
+    }
+    setAccounts(prev => [...prev, newAccount])
+
+    showToast(isCustom
+      ? `✅ تم إنشاء العميل "${clientName}" وحساب الدخول بنجاح`
+      : `✅ تم إنشاء حساب دخول لـ "${clientName}" بنجاح`
+    )
+
+    // إعادة تعيين النموذج
+    setForm({ clientId: '', customClientName: '', email: '', password: generatePassword(), sendEmail: true, status: 'active', customStatus: '', note: '' })
     setFormSaved(true)
-    setTimeout(()=>{ setFormSaved(false); setMainTab('accounts') }, 2000)
+    setTimeout(() => { setFormSaved(false); setMainTab('accounts') }, 1800)
   }
 
   const mainTabs = [
-    {key:'list',label:'📋 قائمة العملاء',count:mockClients.length},
-    {key:'accounts',label:'🔑 حسابات الدخول',count:mockClientAccounts.length},
+    {key:'list',label:'📋 قائمة العملاء',count:clients.length},
+    {key:'accounts',label:'🔑 حسابات الدخول',count:accounts.length},
     {key:'create_account',label:'➕ إنشاء حساب جديد'},
   ]
 
