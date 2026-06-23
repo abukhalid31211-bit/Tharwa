@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Search, Plus, X, TrendingUp, TrendingDown } from 'lucide-react'
-import { mockTransactions } from '../adminData'
+import { Search, Plus, X } from 'lucide-react'
+import { mockTransactions, mockClients } from '../adminData'
 
 const C = {
   card: { background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:14, overflow:'hidden' } as React.CSSProperties,
@@ -29,6 +29,8 @@ export default function Transactions() {
   const [price, setPrice] = useState('')
   const [asset, setAsset] = useState('')
   const [client, setClient] = useState('')
+  const [clientMode, setClientMode] = useState<'select'|'custom'>('select')
+  const [customClient, setCustomClient] = useState('')
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -185,7 +187,45 @@ export default function Transactions() {
                   </button>
                 ))}
               </div>
-              {[{label:'اسم العميل',value:client,set:setClient,placeholder:'محمد الأحمد'},{label:'الأصل',value:asset,set:setAsset,placeholder:'أرامكو / BTC ...'},{label:'الكمية',value:qty,set:setQty,placeholder:'100'},{label:'سعر الوحدة ($)',value:price,set:setPrice,placeholder:'124.50'}].map(f => (
+              {/* حقل العميل — هجين */}
+              <div>
+                <div style={{fontSize:'0.72rem',color:'#64748B',fontWeight:600,marginBottom:6}}>اسم العميل</div>
+                <select
+                  value={clientMode === 'custom' ? 'custom' : client}
+                  onChange={e => {
+                    const val = e.target.value
+                    if (val === 'custom') {
+                      setClientMode('custom')
+                      setClient('')
+                    } else {
+                      setClientMode('select')
+                      setClient(val)
+                      setCustomClient('')
+                    }
+                  }}
+                  style={{width:'100%',padding:'10px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",boxSizing:'border-box',outline:'none',cursor:'pointer'}}
+                >
+                  <option value="">-- اختر العميل --</option>
+                  {mockClients.map(c=>(
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                  <option value="custom">✏️ إدخال اسم مخصص</option>
+                </select>
+                {clientMode === 'custom' && (
+                  <div style={{marginTop:8}}>
+                    <input
+                      value={customClient}
+                      onChange={e=>{setCustomClient(e.target.value); setClient(e.target.value)}}
+                      placeholder="اكتب اسم العميل..."
+                      style={{width:'100%',padding:'10px 12px',background:'rgba(201,168,76,0.05)',border:'1px solid #C9A84C',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",boxSizing:'border-box',outline:'none'}}
+                      autoFocus
+                    />
+                    <div style={{fontSize:'0.68rem',color:'#C9A84C',marginTop:4}}>✏️ أدخل الاسم يدوياً</div>
+                  </div>
+                )}
+              </div>
+              {/* باقي الحقول */}
+              {[{label:'الأصل',value:asset,set:setAsset,placeholder:'أرامكو / BTC ...'},{label:'الكمية',value:qty,set:setQty,placeholder:'100'},{label:'سعر الوحدة ($)',value:price,set:setPrice,placeholder:'124.50'}].map(f => (
                 <div key={f.label}>
                   <div style={{fontSize:'0.72rem',color:'#64748B',fontWeight:600,marginBottom:6}}>{f.label}</div>
                   <input value={f.value} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder} style={{width:'100%',padding:'10px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",boxSizing:'border-box',outline:'none'}}
