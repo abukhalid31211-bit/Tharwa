@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle } from "lucide-react";
 import { useLang } from "../contexts/LanguageContext";
-import { addContactMessage } from "../lib/store";
+import { submitContactMessage } from "../lib/api";
+import { useSiteSettings } from "../contexts/SiteSettingsContext";
 
 export const Route = createFileRoute("/contact")({ component: Contact });
 
@@ -35,25 +36,30 @@ function Contact() {
     if (errors[k]) setErrors((p) => ({ ...p, [k]: undefined }));
   };
 
+  const [apiError, setApiError] = useState("");
+  const { settings } = useSiteSettings();
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-
-    // Save message to admin panel
-    addContactMessage({
-      name: form.name,
-      email: form.email,
-      phone: form.phone,
-      service: form.service,
-      message: form.message,
-      source: 'contact',
-    });
-
-    setLoading(false);
-    setSubmitted(true);
+    setApiError("");
+    try {
+      await submitContactMessage({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        service: form.service,
+        message: form.message,
+        source: 'contact',
+      });
+      setLoading(false);
+      setSubmitted(true);
+    } catch (err: unknown) {
+      setApiError(err instanceof Error ? err.message : "حدث خطأ. يرجى المحاولة مجدداً.");
+      setLoading(false);
+    }
   };
 
   if (submitted) {

@@ -7,6 +7,7 @@ import { BackToTop } from "../components/site/BackToTop";
 import { CookieBanner } from "../components/site/CookieBanner";
 import { ToastProvider } from "../components/site/Toast";
 import { LanguageProvider, LangUrlSync } from "../contexts/LanguageContext";
+import { SiteSettingsProvider } from "../contexts/SiteSettingsContext";
 import { Link } from "@tanstack/react-router";
 
 function NotFoundComponent() {
@@ -68,6 +69,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <SiteSettingsProvider>
       <LanguageProvider>
         {/* Keeps ?lang=xx in the URL on every client-side navigation */}
         <LangUrlSync pathname={pathname} />
@@ -87,6 +89,7 @@ function RootComponent() {
           </div>
         </ToastProvider>
       </LanguageProvider>
+      </SiteSettingsProvider>
     </QueryClientProvider>
   );
 }

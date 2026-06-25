@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Send, Paperclip, Trash2, Eye, CheckCheck, Mail, Phone, Briefcase, Calendar, MessageSquare, Inbox, Filter } from 'lucide-react'
 import { mockMessages } from '../adminData'
-import { getContactMessages, updateContactMessageStatus, deleteContactMessage, ContactMessage } from '../../../lib/store'
+import { getMessages, updateMessageStatus, deleteMessage, type ContactMessage } from '../../../lib/api'
 
 // ── Status badge ───────────────────────────────────────────────────────────
 function StatusBadge({ status }: { status: ContactMessage['status'] }) {
@@ -26,35 +26,32 @@ function ContactMessagesTab() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'new' | 'read' | 'replied'>('all')
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null)
 
-  const reload = () => {
-    const data = getContactMessages()
-    setMsgs(data)
+  const reload = async () => {
+    try {
+      const { messages } = await getMessages()
+      setMsgs(messages)
+    } catch { /* fallback to empty */ }
   }
 
-  useEffect(() => {
-    reload()
-    const handler = () => reload()
-    window.addEventListener('tharwah_contact_messages_changed', handler)
-    return () => window.removeEventListener('tharwah_contact_messages_changed', handler)
-  }, [])
+  useEffect(() => { reload() }, [])
 
-  const handleSelect = (msg: ContactMessage) => {
+  const handleSelect = async (msg: ContactMessage) => {
     setSelected(msg)
     if (msg.status === 'new') {
-      updateContactMessageStatus(msg.id, 'read')
-      setMsgs(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'read' } : m))
+      await updateMessageStatus(msg.id, 'read')
+      setMsgs(prev => prev.map(m => m.id === msg.id ? { ...m, status: 'read' as const } : m))
       setSelected({ ...msg, status: 'read' })
     }
   }
 
-  const handleStatus = (id: number, status: ContactMessage['status']) => {
-    updateContactMessageStatus(id, status)
+  const handleStatus = async (id: number, status: ContactMessage['status']) => {
+    await updateMessageStatus(id, status)
     setMsgs(prev => prev.map(m => m.id === id ? { ...m, status } : m))
     if (selected?.id === id) setSelected(prev => prev ? { ...prev, status } : prev)
   }
 
-  const handleDelete = (id: number) => {
-    deleteContactMessage(id)
+  const handleDelete = async (id: number) => {
+    await deleteMessage(id)
     setMsgs(prev => prev.filter(m => m.id !== id))
     if (selected?.id === id) setSelected(null)
     setConfirmDelete(null)
@@ -424,14 +421,10 @@ export default function Messages() {
   const [newCount, setNewCount] = useState(0)
 
   useEffect(() => {
-    const update = () => {
-      const msgs = getContactMessages()
-      setContactCount(msgs.length)
-      setNewCount(msgs.filter(m => m.status === 'new').length)
-    }
-    update()
-    window.addEventListener('tharwah_contact_messages_changed', update)
-    return () => window.removeEventListener('tharwah_contact_messages_changed', update)
+    getMessages().then(({ messages }) => {
+      setContactCount(messages.length)
+      setNewCount(messages.filter(m => m.status === 'new').length)
+    }).catch(() => {})
   }, [])
 
   const chatUnread = mockMessages.reduce((s,c)=>s+c.unread, 0)

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getSiteName, setSiteName, getSiteNameEn, setSiteNameEn } from '../../../lib/store'
+import { useState, useEffect } from 'react'
+import { getSettings, saveSettings } from '../../../lib/api'
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
   return <div onClick={()=>onChange(!on)} style={{width:40,height:22,borderRadius:22,background: on ? '#0EA5E9' : '#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
@@ -31,17 +31,32 @@ const navItems = [
 export default function Settings() {
   const [activeNav, setActiveNav] = useState('general')
   const [saved, setSaved] = useState(false)
-  const [siteNameAr, setSiteNameArState] = useState(getSiteName)
-  const [siteNameEnState, setSiteNameEnStateLocal] = useState(getSiteNameEn)
+  const [siteNameAr, setSiteNameArState] = useState('ثروة كابيتال')
+  const [siteNameEnState, setSiteNameEnStateLocal] = useState('Tharwah Capital')
   const [siteNameSaved, setSiteNameSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getSettings().then(({ settings }) => {
+      if (settings.site_name_ar) setSiteNameArState(settings.site_name_ar)
+      if (settings.site_name_en) setSiteNameEnStateLocal(settings.site_name_en)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
 
   const save = () => { setSaved(true); setTimeout(()=>setSaved(false),2000) }
 
-  const saveSiteName = () => {
-    setSiteName(siteNameAr.trim() || 'ثروة كابيتال')
-    setSiteNameEn(siteNameEnState.trim() || 'Tharwah Capital')
-    setSiteNameSaved(true)
-    setTimeout(() => setSiteNameSaved(false), 2500)
+  const saveSiteName = async () => {
+    try {
+      await saveSettings({
+        site_name_ar: siteNameAr.trim() || 'ثروة كابيتال',
+        site_name_en: siteNameEnState.trim() || 'Tharwah Capital',
+      })
+      setSiteNameSaved(true)
+      setTimeout(() => setSiteNameSaved(false), 2500)
+    } catch {
+      alert('حدث خطأ أثناء الحفظ. تحقق من الاتصال.')
+    }
   }
 
   return (
@@ -109,7 +124,7 @@ export default function Settings() {
                   </div>
                 </div>
                 <div style={{marginTop:12,padding:'10px 14px',background:'rgba(14,165,233,0.06)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:8,fontSize:'0.72rem',color:'#0EA5E9',lineHeight:1.7}}>
-                  الاسم الحالي: <strong>{getSiteName()}</strong> / <strong>{getSiteNameEn()}</strong> — يتغير في: الهيدر، الفوتر، لوحة التحكم، لوحة العميل، صفحة الدخول للإدارة.
+                  الاسم الحالي: <strong>{siteNameAr}</strong> / <strong>{siteNameEnState}</strong> — يتغير في: الهيدر، الفوتر، لوحة التحكم، لوحة العميل، صفحة الدخول للإدارة.
                 </div>
               </div>
 

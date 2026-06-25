@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import AdminLogin from '../components/admin/AdminLogin'
 import AdminLayout from '../components/admin/AdminLayout'
+import { getAdminSession, clearAdminSession } from '../lib/auth'
 
 export const Route = createFileRoute('/Akadmin')({
   component: AkadminPage,
@@ -15,10 +16,9 @@ function AkadminPage() {
     const meta = document.querySelector('meta[name="viewport"]')
     const original = meta?.getAttribute('content') ?? 'width=device-width, initial-scale=1'
     meta?.setAttribute('content', 'width=1280, initial-scale=1')
-    const stored = localStorage.getItem('admin_auth')
-    const storedRole = localStorage.getItem('admin_role') as 'super' | 'sub' | null
-    setAuthed(stored === 'true')
-    if (storedRole) setRole(storedRole)
+    const session = getAdminSession()
+    setAuthed(!!session)
+    if (session) setRole(session.role)
     return () => { meta?.setAttribute('content', original) }
   }, [])
 
@@ -28,10 +28,7 @@ function AkadminPage() {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_auth')
-    localStorage.removeItem('admin_role')
-    localStorage.removeItem('admin_email')
-    localStorage.removeItem('admin_name')
+    clearAdminSession()
     setAuthed(false)
   }
 
