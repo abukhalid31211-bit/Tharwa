@@ -1,12 +1,16 @@
 import { query, queryOne } from '../_lib/db.js'
 import { handleCors } from '../_lib/cors.js'
 import { requireAdmin } from '../_lib/auth.js'
+import logger from '../_lib/logger.js'
+import { sendError, sendSuccess, ValidationError } from '../_lib/errors.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
   const decoded = requireAdmin(req, res)
   if (!decoded) return
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'GET') {
+    return sendError(res, new ValidationError('Method not allowed'))
+  }
 
   try {
     const [
@@ -41,7 +45,9 @@ export default async function handler(req, res) {
     const ts = txStats[0]
     const ms = msgStats[0]
 
-    return res.json({
+    logger.info('Overview dashboard loaded')
+
+    return sendSuccess(res, {
       kpis: {
         activeClients:     Number(cs.active),
         inactiveClients:   Number(cs.inactive),
@@ -58,6 +64,6 @@ export default async function handler(req, res) {
       recentTransactions: recentTx,
     })
   } catch (e) {
-    return res.status(500).json({ error: e.message })
+    return sendError(res, e, { endpoint: 'overview' })
   }
 }

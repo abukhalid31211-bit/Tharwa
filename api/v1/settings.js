@@ -1,6 +1,8 @@
-import { query } from '../../_lib/db.js'
-import { handleCors } from '../../_lib/cors.js'
-import { verifyToken } from '../../_lib/auth.js'
+import { query } from '../_lib/db.js'
+import { handleCors } from '../_lib/cors.js'
+import { verifyToken } from '../_lib/auth.js'
+import logger from '../_lib/logger.js'
+import { sendError, sendSuccess, ValidationError, AuthenticationError } from '../_lib/errors.js'
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return
@@ -10,19 +12,23 @@ export default async function handler(req, res) {
       const rows = await query('SELECT key, value, type, label FROM site_settings ORDER BY key')
       const settings = {}
       for (const row of rows) settings[row.key] = row.value
-      return res.json({ settings, rows })
+      logger.debug('Settings retrieved', { count: rows.length })
+      return sendSuccess(res, { settings, rows })
     } catch (e) {
-      return res.status(500).json({ error: e.message })
+      return sendError(res, e, { endpoint: 'settings-get' })
     }
   }
 
   if (req.method === 'POST') {
     const decoded = verifyToken(req)
-    if (!decoded) return res.status(401).json({ error: 'غير مصرح' })
+    if (!decoded) {
+      logger.warn('Unauthorized settings update attempt')
+      return sendError(res, new AuthenticationError('غير مصرح'))
+    }
 
     const { settings } = req.body || {}
     if (!settings || typeof settings !== 'object') {
-      return res.status(400).json({ error: 'settings object required' })
+      return sendError(res, new ValidationError('settings object مطلوب'))
     }
     try {
       for (const [key, value] of Object.entries(settings)) {
@@ -33,11 +39,12 @@ export default async function handler(req, res) {
           [key, String(value)]
         )
       }
-      return res.json({ success: true, updated: Object.keys(settings).length })
+      logger.info('Settings updated', { count: Object.keys(settings).length })
+      return sendSuccess(res, { success: true, updated: Object.keys(settings).length })
     } catch (e) {
-      return res.status(500).json({ error: e.message })
+      return sendError(res, e, { endpoint: 'settings-post' })
     }
   }
 
-  return res.status(405).json({ error: 'Method not allowed' })
+  return sendError(res, new ValidationError('Method not allowed'))
 }
