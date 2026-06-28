@@ -30,7 +30,17 @@ interface Props {
   role: 'super' | 'sub'
 }
 
-const SUB_ADMIN_ALLOWED: Page[] = ['clients', 'portfolios', 'transactions']
+// Dynamic sub-admin allowed pages from stored permissions
+function getSubAdminAllowed(): Page[] {
+  try {
+    const raw = localStorage.getItem('admin_permissions')
+    if (raw) {
+      const parsed: string[] = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed as Page[]
+    }
+  } catch { /* ignore */ }
+  return ['clients', 'portfolios', 'transactions']
+}
 
 const superNavGroups = [
   { title: 'الرئيسية', items: [
@@ -67,13 +77,19 @@ const superNavGroups = [
   ]},
 ]
 
-const subNavGroups = [
-  { title: 'إدارة العملاء ومحافظهم', items: [
-    { key: 'clients', Icon: Users, label: 'العملاء والحسابات', badge: 3 },
-    { key: 'portfolios', Icon: Briefcase, label: 'المحافظ الاستثمارية' },
-    { key: 'transactions', Icon: CreditCard, label: 'العمليات', badge: 7 },
-  ]},
+const ALL_SUB_ITEMS: { key: string; Icon: React.ComponentType<{size?:number;style?:React.CSSProperties}>; label: string; badge?: number }[] = [
+  { key: 'clients',      Icon: Users,        label: 'العملاء والحسابات',     badge: 3 },
+  { key: 'portfolios',   Icon: Briefcase,    label: 'المحافظ الاستثمارية' },
+  { key: 'transactions', Icon: CreditCard,   label: 'العمليات',              badge: 7 },
+  { key: 'messages',     Icon: MessageSquare, label: 'الرسائل' },
+  { key: 'content',      Icon: FileText,     label: 'المحتوى' },
+  { key: 'reports',      Icon: BarChart2,    label: 'التقارير' },
 ]
+
+function buildSubNavGroups(allowed: Page[]) {
+  const items = ALL_SUB_ITEMS.filter(it => allowed.includes(it.key as Page))
+  return items.length ? [{ title: 'الأقسام المتاحة', items }] : []
+}
 
 const pageTitles: Record<Page,string> = {
   overview:'لوحة التحكم',clients:'العملاء',portfolios:'المحافظ',
@@ -88,8 +104,9 @@ const pageTitles: Record<Page,string> = {
 
 export default function AdminLayout({ onLogout, role }: Props) {
   const isSuper = role === 'super'
-  const defaultPage: Page = isSuper ? 'overview' : 'clients'
-  const navGroups = isSuper ? superNavGroups : subNavGroups
+  const subAllowed = isSuper ? [] : getSubAdminAllowed()
+  const defaultPage: Page = isSuper ? 'overview' : (subAllowed[0] as Page || 'clients')
+  const navGroups = isSuper ? superNavGroups : buildSubNavGroups(subAllowed)
 
   const [page, setPage] = useState<Page>(defaultPage)
   const [collapsed, setCollapsed] = useState(false)
@@ -110,7 +127,7 @@ export default function AdminLayout({ onLogout, role }: Props) {
     : (localStorage.getItem('admin_name') || 'مشرف')
   const adminEmail = localStorage.getItem('admin_email') || ''
 
-  const safePage: Page = (!isSuper && !SUB_ADMIN_ALLOWED.includes(page)) ? 'clients' : page
+  const safePage: Page = (!isSuper && !subAllowed.includes(page)) ? (subAllowed[0] as Page || 'clients') : page
 
   const renderPage = () => {
     switch(safePage) {
@@ -140,7 +157,7 @@ export default function AdminLayout({ onLogout, role }: Props) {
 
   const handleNavClick = (key: string) => {
     const target = key as Page
-    if (!isSuper && !SUB_ADMIN_ALLOWED.includes(target)) return
+    if (!isSuper && !subAllowed.includes(target)) return
     setPage(target)
   }
 

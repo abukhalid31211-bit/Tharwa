@@ -8,6 +8,9 @@ export function saveAdminSession(token: string, user: AdminUser) {
   localStorage.setItem('admin_email', user.email)
   localStorage.setItem('admin_name', user.name)
   localStorage.setItem('admin_id', user.id)
+  if (user.permissions) {
+    localStorage.setItem('admin_permissions', JSON.stringify(user.permissions))
+  }
 }
 
 export function clearAdminSession() {
@@ -17,18 +20,25 @@ export function clearAdminSession() {
   localStorage.removeItem('admin_email')
   localStorage.removeItem('admin_name')
   localStorage.removeItem('admin_id')
+  localStorage.removeItem('admin_permissions')
 }
 
-export function getAdminSession(): { token: string; role: 'super' | 'sub'; email: string; name: string } | null {
+export function getAdminSession(): { token: string; role: 'super' | 'sub'; email: string; name: string; permissions: string[] } | null {
   const token = localStorage.getItem('admin_token')
   const auth  = localStorage.getItem('admin_auth')
   const role  = localStorage.getItem('admin_role') as 'super' | 'sub' | null
   if (!token || auth !== 'true' || !role) return null
+  let permissions: string[] = []
+  try {
+    const raw = localStorage.getItem('admin_permissions')
+    if (raw) permissions = JSON.parse(raw)
+  } catch { /* ignore */ }
   return {
     token,
     role,
     email: localStorage.getItem('admin_email') || '',
     name:  localStorage.getItem('admin_name')  || '',
+    permissions,
   }
 }
 

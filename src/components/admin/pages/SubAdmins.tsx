@@ -2,6 +2,15 @@ import { useState, useEffect } from 'react'
 import { UserPlus, Trash2, Eye, EyeOff, Shield, Mail, Lock, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
 import { getSubAdmins as apiGetSubAdmins, createSubAdmin as apiCreateSubAdmin, deleteSubAdmin as apiDeleteSubAdmin, type SubAdmin } from '../../../lib/api'
 
+const PERMISSION_OPTIONS = [
+  { key: 'clients',      label: '👥 العملاء والحسابات' },
+  { key: 'portfolios',   label: '💼 المحافظ الاستثمارية' },
+  { key: 'transactions', label: '💳 العمليات والصفقات' },
+  { key: 'messages',     label: '💬 الرسائل' },
+  { key: 'content',      label: '📄 المحتوى' },
+  { key: 'reports',      label: '📊 التقارير' },
+]
+
 export default function SubAdmins() {
   const [list, setList] = useState<SubAdmin[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -9,6 +18,7 @@ export default function SubAdmins() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [permissions, setPermissions] = useState<string[]>(['clients', 'portfolios', 'transactions'])
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(true)
@@ -29,7 +39,7 @@ export default function SubAdmins() {
 
   useEffect(() => { load() }, [])
 
-  const resetForm = () => { setName(''); setEmail(''); setPassword(''); setShowPass(false); setError('') }
+  const resetForm = () => { setName(''); setEmail(''); setPassword(''); setShowPass(false); setError(''); setPermissions(['clients', 'portfolios', 'transactions']) }
 
   const generatePassword = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#'
@@ -38,15 +48,22 @@ export default function SubAdmins() {
     setPassword(p); setShowPass(true)
   }
 
+  const togglePermission = (key: string) => {
+    setPermissions(prev =>
+      prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+    )
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     if (!name.trim() || !email.trim() || !password.trim()) { setError('جميع الحقول مطلوبة'); return }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('البريد الإلكتروني غير صحيح'); return }
     if (password.length < 6) { setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل'); return }
+    if (permissions.length === 0) { setError('يجب اختيار صلاحية واحدة على الأقل'); return }
     setSubmitting(true)
     try {
-      const { subAdmin } = await apiCreateSubAdmin({ name: name.trim(), email: email.trim(), password })
+      const { subAdmin } = await apiCreateSubAdmin({ name: name.trim(), email: email.trim(), password, permissions })
       setList(prev => [subAdmin, ...prev])
       setShowForm(false); resetForm()
       setSuccess(`✅ تم إنشاء حساب ${subAdmin.name} بنجاح`)
@@ -70,12 +87,14 @@ export default function SubAdmins() {
     }
   }
 
+  const permLabel = (key: string) => PERMISSION_OPTIONS.find(p => p.key === key)?.label ?? key
+
   return (
     <div style={{ fontFamily: "'Cairo', sans-serif", direction: 'rtl' }}>
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1E293B', margin: 0 }}>إدارة المشرفين</h1>
-          <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>أنشئ حسابات مشرفين فرعيين للوصول المحدود للوحة التحكم</p>
+          <p style={{ fontSize: '0.82rem', color: '#64748B', margin: '4px 0 0' }}>أنشئ حسابات مشرفين فرعيين وحدد صلاحياتهم</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={load} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 10, fontSize: '0.82rem', cursor: 'pointer', fontFamily: "'Cairo',sans-serif", color: '#475569' }}>
@@ -102,7 +121,7 @@ export default function SubAdmins() {
       {/* Create Form Modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 420, maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+          <div style={{ background: '#fff', borderRadius: 16, padding: 32, width: 480, maxWidth: '92vw', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', maxHeight: '90vh', overflowY: 'auto' }}>
             <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1E293B', margin: '0 0 20px' }}>إضافة مشرف جديد</h2>
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
@@ -134,6 +153,30 @@ export default function SubAdmins() {
                   </button>
                 </div>
               </div>
+
+              {/* Permissions */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: '#475569', marginBottom: 8 }}>الصلاحيات — الأقسام المسموح بالوصول إليها</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10, padding: 14 }}>
+                  {PERMISSION_OPTIONS.map(opt => (
+                    <label key={opt.key} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '6px 10px', borderRadius: 8, background: permissions.includes(opt.key) ? 'rgba(14,165,233,0.08)' : 'transparent', border: `1px solid ${permissions.includes(opt.key) ? 'rgba(14,165,233,0.25)' : 'transparent'}`, transition: 'all .15s' }}>
+                      <input
+                        type="checkbox"
+                        checked={permissions.includes(opt.key)}
+                        onChange={() => togglePermission(opt.key)}
+                        style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#0EA5E9' }}
+                      />
+                      <span style={{ fontSize: '0.82rem', color: permissions.includes(opt.key) ? '#0EA5E9' : '#475569', fontWeight: permissions.includes(opt.key) ? 700 : 500 }}>
+                        {opt.label}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                <div style={{ fontSize: '0.68rem', color: '#94A3B8', marginTop: 5 }}>
+                  {permissions.length === 0 ? '⚠️ يجب تحديد صلاحية واحدة على الأقل' : `✅ ${permissions.length} صلاحية محددة`}
+                </div>
+              </div>
+
               {error && <div style={{ color: '#FF4560', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6 }}><AlertTriangle size={13} />{error}</div>}
               <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
                 <button type="submit" disabled={submitting} style={{ flex: 1, padding: '11px', background: 'linear-gradient(135deg,#0EA5E9,#38BDF8)', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.88rem', fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: "'Cairo',sans-serif", opacity: submitting ? 0.7 : 1 }}>
@@ -162,7 +205,7 @@ export default function SubAdmins() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                {['الاسم', 'البريد الإلكتروني', 'الحالة', 'تاريخ الإنشاء', 'إجراءات'].map(h => (
+                {['الاسم', 'البريد الإلكتروني', 'الصلاحيات', 'الحالة', 'تاريخ الإنشاء', 'إجراءات'].map(h => (
                   <th key={h} style={{ padding: '11px 16px', textAlign: 'right', fontSize: '0.7rem', fontWeight: 600, color: '#64748B', borderBottom: '1px solid #E2E8F0', background: '#F1F5F9', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -179,6 +222,15 @@ export default function SubAdmins() {
                     </div>
                   </td>
                   <td style={{ padding: '13px 16px', fontSize: '0.8rem', color: '#475569', borderBottom: '1px solid rgba(203,213,225,0.5)', fontFamily: 'monospace' }}>{sub.email}</td>
+                  <td style={{ padding: '13px 16px', borderBottom: '1px solid rgba(203,213,225,0.5)' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {(sub.permissions && sub.permissions.length > 0 ? sub.permissions : ['clients', 'portfolios', 'transactions']).map(p => (
+                        <span key={p} style={{ padding: '2px 8px', borderRadius: 12, fontSize: '0.65rem', fontWeight: 600, background: 'rgba(14,165,233,0.1)', color: '#0EA5E9', border: '1px solid rgba(14,165,233,0.2)' }}>
+                          {permLabel(p)}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
                   <td style={{ padding: '13px 16px', borderBottom: '1px solid rgba(203,213,225,0.5)' }}>
                     <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700, background: sub.status === 'active' ? 'rgba(0,217,126,0.1)' : 'rgba(255,69,96,0.1)', color: sub.status === 'active' ? '#00D97E' : '#FF4560', border: `1px solid ${sub.status === 'active' ? 'rgba(0,217,126,0.3)' : 'rgba(255,69,96,0.3)'}` }}>
                       {sub.status === 'active' ? '● نشط' : '● موقوف'}

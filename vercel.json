@@ -6,18 +6,21 @@
     "NODE_ENV": "production"
   },
   "rewrites": [
-    { "source": "/api/v1/health", "destination": "/api/v1/health" },
-    { "source": "/api/v1/auth/admin-login", "destination": "/api/v1/auth/admin-login" },
-    { "source": "/api/v1/auth/client-login","destination": "/api/v1/auth/client-login" },
-    { "source": "/api/v1/clients",           "destination": "/api/v1/clients" },
-    { "source": "/api/v1/transactions",      "destination": "/api/v1/transactions" },
-    { "source": "/api/v1/portfolios",        "destination": "/api/v1/portfolios" },
-    { "source": "/api/v1/settings",          "destination": "/api/v1/settings" },
-    { "source": "/api/v1/messages",          "destination": "/api/v1/messages" },
-    { "source": "/api/v1/sub-admins",        "destination": "/api/v1/sub-admins" },
-    { "source": "/api/v1/notifications",     "destination": "/api/v1/notifications" },
-    { "source": "/api/v1/overview",          "destination": "/api/v1/overview" },
-    { "source": "/((?!api/).*)",             "destination": "/index.html" }
+    { "source": "/api/v1/health",                   "destination": "/api/v1/health" },
+    { "source": "/api/v1/auth/admin-login",          "destination": "/api/v1/auth/admin-login" },
+    { "source": "/api/v1/auth/client-login",         "destination": "/api/v1/auth/client-login" },
+    { "source": "/api/v1/clients",                   "destination": "/api/v1/clients" },
+    { "source": "/api/v1/transactions",              "destination": "/api/v1/transactions" },
+    { "source": "/api/v1/portfolios",                "destination": "/api/v1/portfolios" },
+    { "source": "/api/v1/settings",                  "destination": "/api/v1/settings" },
+    { "source": "/api/v1/messages",                  "destination": "/api/v1/messages" },
+    { "source": "/api/v1/sub-admins",                "destination": "/api/v1/sub-admins" },
+    { "source": "/api/v1/notifications",             "destination": "/api/v1/notifications" },
+    { "source": "/api/v1/overview",                  "destination": "/api/v1/overview" },
+    { "source": "/api/v1/client/profile",            "destination": "/api/v1/client/profile" },
+    { "source": "/api/v1/client/portfolio",          "destination": "/api/v1/client/portfolio" },
+    { "source": "/api/v1/client/transactions",       "destination": "/api/v1/client/transactions" },
+    { "source": "/((?!api/).*)",                     "destination": "/index.html" }
   ],
   "headers": [
     {

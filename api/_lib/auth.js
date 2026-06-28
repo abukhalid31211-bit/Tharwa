@@ -1,6 +1,5 @@
 import jwt from 'jsonwebtoken'
 
-// Support both JWT_SECRET and SUPABASE_JWT_SECRET (Vercel Supabase integration uses the latter)
 const getSecret = () => process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET || null
 
 const JWT_EXPIRES = '8h'
@@ -36,6 +35,20 @@ export function requireAdmin(req, res) {
   const payload = verifyToken(token)
   if (!payload) {
     res.status(401).json({ error: 'Unauthorized — invalid or expired token' })
+    return null
+  }
+  return payload
+}
+
+export function requireClient(req, res) {
+  const token = extractToken(req)
+  if (!token) {
+    res.status(401).json({ error: 'Unauthorized — missing token' })
+    return null
+  }
+  const payload = verifyToken(token)
+  if (!payload || payload.role !== 'client') {
+    res.status(401).json({ error: 'Unauthorized — client token required' })
     return null
   }
   return payload

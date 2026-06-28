@@ -1,20 +1,24 @@
 const BASE = '/api/v1'
 
-function getToken(): string | null {
-  return localStorage.getItem('admin_token') || localStorage.getItem('client_token')
+function getAdminToken(): string | null {
+  return localStorage.getItem('admin_token')
 }
 
-function authHeaders(): Record<string, string> {
-  const token = getToken()
+function getClientToken(): string | null {
+  return localStorage.getItem('client_token')
+}
+
+function authHeaders(useClientToken = false): Record<string, string> {
+  const token = useClientToken ? getClientToken() : (getAdminToken() || getClientToken())
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, useClientToken = false): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...authHeaders(),
+      ...authHeaders(useClientToken),
       ...(options.headers || {}),
     },
   })
@@ -31,7 +35,7 @@ export const adminLogin = (email: string, password: string) =>
   })
 
 export const clientLogin = (email: string, password: string) =>
-  request<{ token: string; user: ClientUser }>('/auth/client-login', {
+  request<{ token: string; client: ClientUser }>('/auth/client-login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
@@ -47,8 +51,10 @@ export const saveSettings = (settings: Record<string, string>) =>
   })
 
 // ─── Clients ──────────────────────────────────────────────────────────────────
-export const getClients = () =>
-  request<{ clients: Client[] }>('/clients')
+export const getClients = (params?: { search?: string; status?: string; limit?: number }) => {
+  const q = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+  return request<{ clients: Client[]; total: number }>(`/clients${q}`)
+}
 
 export const getClient = (id: string) =>
   request<{ client: Client }>(`/clients?id=${id}`)
@@ -57,14 +63,14 @@ export const createClient = (data: Partial<Client> & { password?: string }) =>
   request<{ client: Client }>('/clients', { method: 'POST', body: JSON.stringify(data) })
 
 export const updateClient = (id: string, data: Partial<Client> & { password?: string }) =>
-  request<{ client: Client }>(`/clients?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+  request<{ client: Client }>('/clients', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
 
 export const deleteClient = (id: string) =>
   request<{ success: boolean }>(`/clients?id=${id}`, { method: 'DELETE' })
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
 export const getTransactions = (params?: { status?: string; type?: string; client_id?: string }) => {
-  const q = new URLSearchParams(params as Record<string, string>).toString()
+  const q = params ? new URLSearchParams(params as Record<string, string>).toString() : ''
   return request<{ transactions: Transaction[] }>(`/transactions${q ? '?' + q : ''}`)
 }
 
@@ -72,7 +78,7 @@ export const createTransaction = (data: Partial<Transaction>) =>
   request<{ transaction: Transaction }>('/transactions', { method: 'POST', body: JSON.stringify(data) })
 
 export const updateTransaction = (id: string, data: Partial<Transaction>) =>
-  request<{ transaction: Transaction }>(`/transactions?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+  request<{ transaction: Transaction }>('/transactions', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
 
 export const deleteTransaction = (id: string) =>
   request<{ success: boolean }>(`/transactions?id=${id}`, { method: 'DELETE' })
@@ -83,11 +89,27 @@ export const getPortfolios = (client_id?: string) => {
   return request<{ portfolios: Portfolio[] }>(`/portfolios${q}`)
 }
 
-export const createPortfolio = (data: Partial<Portfolio>) =>
+export const getPortfolio = (id: string) =>
+  request<{ portfolio: Portfolio }>(`/portfolios?id=${id}`)
+
+export const createPortfolio = (data: Partial<Portfolio> & { portfolio_data?: Record<string, unknown> }) =>
   request<{ portfolio: Portfolio }>('/portfolios', { method: 'POST', body: JSON.stringify(data) })
 
-export const updatePortfolio = (id: string, data: Partial<Portfolio>) =>
-  request<{ portfolio: Portfolio }>(`/portfolios?id=${id}`, { method: 'PATCH', body: JSON.stringify(data) })
+export const updatePortfolio = (id: string, data: Partial<Portfolio> & { portfolio_data?: Record<string, unknown> }) =>
+  request<{ portfolio: Portfolio }>('/portfolios', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+
+export const deletePortfolio = (id: string) =>
+  request<{ success: boolean }>(`/portfolios?id=${id}`, { method: 'DELETE' })
+
+// ─── Client Portal ─────────────────────────────────────────────────────────────
+export const getMyProfile = () =>
+  request<{ client: ClientProfile }>('/client/profile', {}, true)
+
+export const getMyPortfolio = () =>
+  request<{ portfolio: Portfolio | null }>('/client/portfolio', {}, true)
+
+export const getMyTransactions = (limit = 20) =>
+  request<{ transactions: ClientTransaction[] }>(`/client/transactions?limit=${limit}`, {}, true)
 
 // ─── Messages ─────────────────────────────────────────────────────────────────
 export const submitContactMessage = (data: ContactMessageInput) =>
@@ -99,7 +121,7 @@ export const getMessages = (status?: string) => {
 }
 
 export const updateMessageStatus = (id: number, status: string) =>
-  request<{ message: ContactMessage }>(`/messages?id=${id}`, { method: 'PATCH', body: JSON.stringify({ status }) })
+  request<{ message: ContactMessage }>('/messages', { method: 'PATCH', body: JSON.stringify({ id, status }) })
 
 export const deleteMessage = (id: number) =>
   request<{ success: boolean }>(`/messages?id=${id}`, { method: 'DELETE' })
@@ -108,7 +130,7 @@ export const deleteMessage = (id: number) =>
 export const getSubAdmins = () =>
   request<{ subAdmins: SubAdmin[] }>('/sub-admins')
 
-export const createSubAdmin = (data: { name: string; email: string; password: string }) =>
+export const createSubAdmin = (data: { name: string; email: string; password: string; permissions?: string[] }) =>
   request<{ subAdmin: SubAdmin }>('/sub-admins', { method: 'POST', body: JSON.stringify(data) })
 
 export const deleteSubAdmin = (id: string) =>
@@ -119,36 +141,51 @@ export const getNotifications = () =>
   request<{ notifications: Notification[]; unread: number }>('/notifications')
 
 export const markNotificationRead = (id: string) =>
-  request<{ notification: Notification }>(`/notifications?id=${id}`, { method: 'PATCH' })
+  request<{ notification: Notification }>('/notifications', { method: 'PATCH', body: JSON.stringify({ id }) })
 
 // ─── Overview / Dashboard KPIs ────────────────────────────────────────────────
 export const getOverview = () =>
   request<{ kpis: OverviewKPIs; recentTransactions: Transaction[]; recentMessages: ContactMessage[] }>('/overview')
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-export interface AdminUser  { id: string; name: string; email: string; role: 'super' | 'sub' }
-export interface ClientUser { id: string; name: string; email: string; portfolioCode: string; initial: string; category: string }
+export interface AdminUser  { id: string; name: string; email: string; role: 'super' | 'sub'; permissions?: string[] }
+export interface ClientUser { id: string; name: string; email: string; account_number?: string; status?: string; membership_level?: string; portfolio_code?: string }
 
 export interface SettingRow { key: string; value: string; type: string; label: string }
 
 export interface Client {
-  id: string; name: string; email: string; phone?: string; nationality?: string
-  id_number?: string; category: string; status: string; portfolio_code: string
-  risk_profile?: string; investment_goal?: string; kyc_status: string
-  notes?: string; initial?: string; created_at: string; updated_at: string
+  id: string; name: string; email: string; phone?: string
+  account_number?: string; status: string
+  risk_profile?: string; notes?: string
+  membership_level?: string; portfolio_code?: string; initial_investment?: string
+  join_date?: string; created_at: string; updated_at?: string
+  avatar_url?: string
 }
 
 export interface Transaction {
-  id: string; client_id?: string; portfolio_id?: string; client_name?: string
-  type: string; asset: string; quantity?: number; price?: number; total?: number
-  status: string; notes?: string; created_at: string
-  clients?: { name: string; email: string; portfolio_code: string }
+  id: string; client_id?: string; type: string; amount?: number; currency?: string
+  reference?: string; status: string; notes?: string; created_at: string
+  clients?: { name: string }
+}
+
+export interface ClientTransaction {
+  id: string; type: string; amount?: number; currency?: string
+  reference?: string; notes?: string; status: string; created_at: string
 }
 
 export interface Portfolio {
   id: string; client_id: string; name: string; type?: string
-  total_value: number; initial_investment: number; profit_loss: number; profit_loss_pct: number
-  currency: string; status: string; assets: unknown[]; notes?: string; created_at: string
+  initial_value?: number; current_value?: number
+  currency?: string; notes?: string; created_at: string; updated_at?: string
+  portfolio_data?: Record<string, unknown>
+  clients?: { name: string; email: string; membership_level?: string }
+}
+
+export interface ClientProfile {
+  id: string; name: string; email: string; phone?: string
+  status?: string; account_number?: string; join_date?: string
+  risk_profile?: string; membership_level?: string; portfolio_code?: string
+  initial_investment?: string; avatar_url?: string
 }
 
 export interface ContactMessage {
@@ -161,7 +198,7 @@ export interface ContactMessageInput {
 }
 
 export interface SubAdmin {
-  id: string; name: string; email: string; status: string; created_at: string
+  id: string; name: string; email: string; status: string; permissions?: string[]; created_at: string
 }
 
 export interface OverviewKPIs {
