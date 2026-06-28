@@ -182,7 +182,7 @@ export default function AdminLayout({ onLogout, role }: Props) {
         {!collapsed && (
           <div style={{ margin:'6px 12px 2px', padding:'5px 10px', borderRadius:8, background: isSuper ? 'rgba(201,168,76,0.12)' : 'rgba(14,165,233,0.08)', border: `1px solid ${isSuper ? 'rgba(201,168,76,0.3)' : 'rgba(14,165,233,0.2)'}`, display:'flex', alignItems:'center', gap:6 }}>
             <span style={{ fontSize:'0.65rem', fontWeight:700, color: isSuper ? '#C9A84C' : '#0EA5E9', whiteSpace:'nowrap' }}>
-              {isSuper ? '👑 Super Admin' : '🔵 مشرف فرعي'}
+              {isSuper ? '👑 Super Admin' : '🔵 مدير نظام'}
             </span>
           </div>
         )}
@@ -246,7 +246,7 @@ export default function AdminLayout({ onLogout, role }: Props) {
             </div>
             {!collapsed && <div style={{ flex:1, textAlign:'right' }}>
               <div style={{ fontSize:'0.75rem', fontWeight:700, color:'#1E293B', whiteSpace:'nowrap' }}>{adminName}</div>
-              <div style={{ fontSize:'0.58rem', color: isSuper ? '#C9A84C' : '#0EA5E9' }}>{isSuper ? 'Super Admin' : 'مشرف فرعي'}</div>
+              <div style={{ fontSize:'0.58rem', color: isSuper ? '#C9A84C' : '#0EA5E9' }}>{isSuper ? 'Super Admin' : 'مدير نظام'}</div>
             </div>}
           </button>
           {showUserMenu && !collapsed && (
