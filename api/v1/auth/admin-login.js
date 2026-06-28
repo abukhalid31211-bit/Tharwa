@@ -39,7 +39,8 @@ import { supabase } from '../../_lib/supabase.js'
         }).then(null, () => {})
 
         const token = signToken({ id: admin.id, email: admin.email, name: admin.name, role: admin.role })
-        return res.json({ token, admin: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } })
+        // Return "user" to match what the frontend expects ({ token, user })
+        return res.json({ token, user: { id: admin.id, name: admin.name, email: admin.email, role: admin.role } })
       }
 
       const { data: sub, error: subErr } = await supabase
@@ -56,7 +57,8 @@ import { supabase } from '../../_lib/supabase.js'
       if (!valid) return res.status(401).json({ error: 'كلمة المرور غير صحيحة' })
 
       const token = signToken({ id: sub.id, email: sub.email, name: sub.name, role: 'sub' })
-      return res.json({ token, admin: { id: sub.id, name: sub.name, email: sub.email, role: 'sub' } })
+      // Return "user" to match what the frontend expects ({ token, user })
+      return res.json({ token, user: { id: sub.id, name: sub.name, email: sub.email, role: 'sub' } })
     } catch (e) {
       return res.status(500).json({ error: e.message })
     }
