@@ -57,7 +57,7 @@ function Login() {
               <label className="mb-1.5 block text-xs font-bold text-foreground">البريد الإلكتروني</label>
               <div className="relative">
                 <Mail className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-text-muted" />
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="client@tharwah.com"
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ادخل البريد الإلكتروني"
                   className="w-full rounded-xl border border-border bg-white py-3 pr-10 pl-4 text-sm placeholder:text-text-muted focus:border-gold focus:outline-none" />
               </div>
             </div>
@@ -66,7 +66,7 @@ function Login() {
               <label className="mb-1.5 block text-xs font-bold text-foreground">كلمة المرور</label>
               <div className="relative">
                 <Lock className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-text-muted" />
-                <input type={showPass ? "text" : "password"} value={pass} onChange={(e) => setPass(e.target.value)} placeholder="••••••••"
+                <input type={showPass ? "text" : "password"} value={pass} onChange={(e) => setPass(e.target.value)} placeholder="ادخل كلمة المرور"
                   className="w-full rounded-xl border border-border bg-white py-3 pr-10 pl-10 text-sm placeholder:text-text-muted focus:border-gold focus:outline-none" />
                 <button type="button" onClick={() => setShowPass((v) => !v)} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-gold transition-colors">
                   {showPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
