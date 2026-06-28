@@ -205,3 +205,9 @@ export interface OverviewKPIs {
   totalClients: number; pendingClients: number; todayTransactions: number
   pendingTransactions: number; newMessages: number
 }
+
+export const updateSubAdmin = (id: string, data: { name?: string; email?: string; password?: string; permissions?: string[] }) =>
+  request<{ subAdmin: SubAdmin }>('\/sub-admins', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+
+export const verifyAdminSession = () =>
+  request<{ valid: boolean; user: { id: string; role: string } }>('\/auth\/verify')
