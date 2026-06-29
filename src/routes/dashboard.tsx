@@ -130,7 +130,7 @@ function Dashboard() {
 
   useEffect(() => {
     const session = getClientSession()
-    if (!session) { navigate({ to: '/client-login' }); return }
+    if (!session) { navigate({ to: '/login' }); return }
     loadData()
   }, [])
 
@@ -147,7 +147,7 @@ function Dashboard() {
       setTransactions(txRes.transactions || [])
     } catch (e: unknown) {
       if (e instanceof Error && e.message.toLowerCase().includes('unauthorized')) {
-        clearClientSession(); navigate({ to: '/client-login' }); return
+        clearClientSession(); navigate({ to: '/login' }); return
       }
       setError(e instanceof Error ? e.message : 'فشل تحميل البيانات')
     } finally {
@@ -155,7 +155,7 @@ function Dashboard() {
     }
   }
 
-  const handleLogout = () => { clearClientSession(); navigate({ to: '/client-login' }) }
+  const handleLogout = () => { clearClientSession(); navigate({ to: '/login' }) }
 
   const handleCopy = (text: string, key: string) => {
     navigator.clipboard.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(null), 2000) })
