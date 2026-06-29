@@ -22,8 +22,8 @@ function Login() {
     if (!email || !pass) { setError("يرجى إدخال البريد الإلكتروني وكلمة المرور"); return; }
     setLoading(true);
     try {
-      const { token, user } = await clientLogin(email.trim(), pass);
-      saveClientSession(token, user);
+      const { token, client } = await clientLogin(email.trim(), pass);
+      saveClientSession(token, client);
       navigate({ to: "/dashboard" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "بيانات الدخول غير صحيحة. يرجى المحاولة مرة أخرى.");
