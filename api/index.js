@@ -16,7 +16,7 @@ import { createClient } from '@supabase/supabase-js'
 
   // ── CORS ──────────────────────────────────────────────────────
   function handleCors(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
     if (req.method === 'OPTIONS') { res.status(204).end(); return true }
@@ -451,6 +451,109 @@ import { createClient } from '@supabase/supabase-js'
     } catch(e) { return res.status(500).json({ error: e.message }) }
   }
 
+  async function handleArticles(req, res) {
+    const decoded = requireAdmin(req, res)
+    if (!decoded) return
+    try {
+      if (req.method === 'GET') {
+        const { id, status, limit = 50, offset = 0 } = req.query
+        if (id) {
+          const { data, error } = await supabase.from('articles').select('*').eq('id', id).single()
+          if (error || !data) return res.status(404).json({ error: 'المقال غير موجود' })
+          return res.json({ article: data })
+        }
+        let q = supabase.from('articles').select('*', { count: 'exact' })
+        if (status) q = q.eq('status', status)
+        q = q.order('created_at', { ascending: false }).range(Number(offset), Number(offset) + Number(limit) - 1)
+        const { data, count, error } = await q
+        if (error) return res.status(500).json({ error: error.message })
+        return res.json({ articles: data || [], total: count })
+      }
+      if (req.method === 'POST') {
+        const { title, body, category, status = 'draft', author } = req.body || {}
+        if (!title) return res.status(400).json({ error: 'العنوان مطلوب' })
+        const { data, error } = await supabase.from('articles').insert({ title, body, category, status, author }).select('*').single()
+        if (error) return res.status(500).json({ error: error.message })
+        return res.status(201).json({ article: data })
+      }
+      if (req.method === 'PATCH') {
+        const { id, ...updates } = req.body || {}
+        if (!id) return res.status(400).json({ error: 'id مطلوب' })
+        const { data, error } = await supabase.from('articles').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select('*').single()
+        if (error) return res.status(500).json({ error: error.message })
+        return res.json({ article: data })
+      }
+      if (req.method === 'DELETE') {
+        const { id } = req.query
+        if (!id) return res.status(400).json({ error: 'id مطلوب' })
+        const { error } = await supabase.from('articles').delete().eq('id', id)
+        if (error) return res.status(500).json({ error: error.message })
+        return res.json({ success: true })
+      }
+      return res.status(405).json({ error: 'Method not allowed' })
+    } catch (e) { return res.status(500).json({ error: e.message }) }
+  }
+
+  async function handleJsonCollection(key, req, res) {
+    const decoded = requireAdmin(req, res)
+    if (!decoded) return
+    const getRaw = async () => {
+      const { data } = await supabase.from('site_settings').select('value').eq('key', key).maybeSingle()
+      try { return data ? JSON.parse(data.value) : [] } catch { return [] }
+    }
+    const saveRaw = async (arr) => {
+      await supabase.from('site_settings').upsert([{ key, value: JSON.stringify(arr), updated_at: new Date().toISOString() }], { onConflict: 'key' })
+    }
+    try {
+      if (req.method === 'GET') {
+        const items = await getRaw()
+        return res.json({ items })
+      }
+      if (req.method === 'POST') {
+        const body = req.body || {}
+        const items = await getRaw()
+        const item = { id: Date.now(), ...body, order: body.order ?? items.length + 1 }
+        items.push(item)
+        await saveRaw(items)
+        return res.status(201).json({ item })
+      }
+      if (req.method === 'PATCH') {
+        const { id, ...updates } = req.body || {}
+        if (!id) return res.status(400).json({ error: 'id مطلوب' })
+        const items = await getRaw()
+        const idx = items.findIndex(x => String(x.id) === String(id))
+        if (idx === -1) return res.status(404).json({ error: 'العنصر غير موجود' })
+        items[idx] = { ...items[idx], ...updates }
+        await saveRaw(items)
+        return res.json({ item: items[idx] })
+      }
+      if (req.method === 'DELETE') {
+        const { id } = req.query
+        if (!id) return res.status(400).json({ error: 'id مطلوب' })
+        const items = await getRaw()
+        await saveRaw(items.filter(x => String(x.id) !== String(id)))
+        return res.json({ success: true })
+      }
+      return res.status(405).json({ error: 'Method not allowed' })
+    } catch (e) { return res.status(500).json({ error: e.message }) }
+  }
+
+  const handleFAQs         = (req, res) => handleJsonCollection('faqs_data', req, res)
+  const handleServices     = (req, res) => handleJsonCollection('services_data', req, res)
+  const handleTestimonials = (req, res) => handleJsonCollection('testimonials_data', req, res)
+
+  async function handleAuditLogs(req, res) {
+    const decoded = requireAdmin(req, res)
+    if (!decoded) return
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+    try {
+      const { limit = 50, offset = 0 } = req.query
+      const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).range(Number(offset), Number(offset) + Number(limit) - 1)
+      if (error) return res.status(500).json({ error: error.message })
+      return res.json({ logs: data || [] })
+    } catch (e) { return res.status(500).json({ error: e.message }) }
+  }
+
   // ── Router ────────────────────────────────────────────────────
   const routes = {
     '/api/v1/health':              handleHealth,
@@ -468,6 +571,11 @@ import { createClient } from '@supabase/supabase-js'
     '/api/v1/client/portfolio':    handleClientPortfolio,
     '/api/v1/client/transactions': handleClientTransactions,
     '/api/v1/auth/verify':           handleAuthVerify,
+    '/api/v1/articles':              handleArticles,
+    '/api/v1/faqs':                  handleFAQs,
+    '/api/v1/services':              handleServices,
+    '/api/v1/testimonials':          handleTestimonials,
+    '/api/v1/audit-logs':            handleAuditLogs,
   }
 
   export default async function handler(req, res) {

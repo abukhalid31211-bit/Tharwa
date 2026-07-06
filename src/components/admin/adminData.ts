@@ -1,8 +1,3 @@
-export const ADMIN_CREDENTIALS = {
-  email: 'akramhaig120@gmail.com',
-  password: '0545',
-}
-
 export const mockClients = [
   { id: 1, name: 'محمد الأحمد', email: 'mohammed@email.com', phone: '+966501234567', country: '🇸🇦', city: 'الرياض', advisor: 'أحمد العمري', portfolio: 125400, status: 'active', category: 'VIP', joined: '2022-01-15', lastActive: 'اليوم' },
   { id: 2, name: 'سارة العمري', email: 'sara@email.com', phone: '+971501234567', country: '🇦🇪', city: 'دبي', advisor: 'خالد محمد', portfolio: 87200, status: 'active', category: 'standard', joined: '2022-03-20', lastActive: 'اليوم' },
@@ -67,7 +62,7 @@ export const mockArticles = [
 ]
 
 export const mockTeam = [
-  { id: 1, name: 'أحمد المشرف', email: 'akramhaig120@gmail.com', role: 'SUPER_ADMIN', clients: 0, lastActive: 'اليوم', status: 'active', joined: '2019-01-01' },
+  { id: 1, name: 'أحمد المشرف', email: 'admin@company.com', role: 'SUPER_ADMIN', clients: 0, lastActive: 'اليوم', status: 'active', joined: '2019-01-01' },
   { id: 2, name: 'خالد محمد', email: 'khalid@company.com', role: 'ADMIN', clients: 0, lastActive: 'اليوم', status: 'active', joined: '2020-03-15' },
   { id: 3, name: 'أحمد العمري', email: 'advisor1@company.com', role: 'ADVISOR', clients: 234, lastActive: 'منذ ساعة', status: 'active', joined: '2021-06-01' },
   { id: 4, name: 'سارة الزهراني', email: 'advisor2@company.com', role: 'ADVISOR', clients: 87, lastActive: 'أمس', status: 'active', joined: '2022-01-20' },

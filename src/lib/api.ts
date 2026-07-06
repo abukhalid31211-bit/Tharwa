@@ -211,3 +211,86 @@ export const updateSubAdmin = (id: string, data: { name?: string; email?: string
 
 export const verifyAdminSession = () =>
   request<{ valid: boolean; user: { id: string; role: string } }>('\/auth\/verify')
+
+// ─── Articles ─────────────────────────────────────────────────────────────────
+export const getArticles = (params?: { status?: string; limit?: number }) => {
+  const q = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+  return request<{ articles: Article[]; total: number }>(`/articles${q}`)
+}
+export const createArticle = (data: Partial<Article>) =>
+  request<{ article: Article }>('/articles', { method: 'POST', body: JSON.stringify(data) })
+export const updateArticle = (id: string, data: Partial<Article>) =>
+  request<{ article: Article }>('/articles', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+export const deleteArticle = (id: string) =>
+  request<{ success: boolean }>(`/articles?id=${id}`, { method: 'DELETE' })
+
+// ─── FAQs ─────────────────────────────────────────────────────────────────────
+export const getFAQs = () =>
+  request<{ items: FAQ[] }>('/faqs')
+export const createFAQ = (data: Partial<FAQ>) =>
+  request<{ item: FAQ }>('/faqs', { method: 'POST', body: JSON.stringify(data) })
+export const updateFAQ = (id: number, data: Partial<FAQ>) =>
+  request<{ item: FAQ }>('/faqs', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+export const deleteFAQ = (id: number) =>
+  request<{ success: boolean }>(`/faqs?id=${id}`, { method: 'DELETE' })
+
+// ─── Services ─────────────────────────────────────────────────────────────────
+export const getServices = () =>
+  request<{ items: Service[] }>('/services')
+export const createService = (data: Partial<Service>) =>
+  request<{ item: Service }>('/services', { method: 'POST', body: JSON.stringify(data) })
+export const updateService = (id: number, data: Partial<Service>) =>
+  request<{ item: Service }>('/services', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+export const deleteService = (id: number) =>
+  request<{ success: boolean }>(`/services?id=${id}`, { method: 'DELETE' })
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+export const getTestimonials = () =>
+  request<{ items: Testimonial[] }>('/testimonials')
+export const createTestimonial = (data: Partial<Testimonial>) =>
+  request<{ item: Testimonial }>('/testimonials', { method: 'POST', body: JSON.stringify(data) })
+export const updateTestimonial = (id: number, data: Partial<Testimonial>) =>
+  request<{ item: Testimonial }>('/testimonials', { method: 'PATCH', body: JSON.stringify({ id, ...data }) })
+export const deleteTestimonial = (id: number) =>
+  request<{ success: boolean }>(`/testimonials?id=${id}`, { method: 'DELETE' })
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+export const getAuditLogs = (params?: { limit?: number }) => {
+  const q = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : ''
+  return request<{ logs: AuditLog[] }>(`/audit-logs${q}`)
+}
+
+// ─── Additional Types ─────────────────────────────────────────────────────────
+export interface Article {
+  id: string; title: string; body?: string; category?: string
+  status: 'published' | 'draft'; author?: string
+  created_at: string; updated_at?: string
+}
+
+export interface FAQ {
+  id: number; question: string; answer: string
+  categoryId?: number; order: number; visible: boolean
+}
+
+export interface Service {
+  id: number; slug?: string; emoji: string; icon?: string
+  title: string; subtitle?: string; description?: string
+  features: string[]; returns?: string; risk?: string
+  minInvest?: string; visible: boolean; order: number
+}
+
+export interface Testimonial {
+  id: number; name: string; role?: string; city?: string
+  text: string; rating: number; visible: boolean; order: number
+}
+
+export interface AuditLog {
+  id: string; actor_id?: string; actor_type?: string
+  actor_email?: string; action?: string
+  details?: Record<string, unknown>; created_at: string
+}
+
+export interface Notification {
+  id: string; type?: string; title?: string; message?: string
+  is_read: boolean; created_at: string
+}

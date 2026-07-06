@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { chartRevenue, chartNewClients, chartPortfolioAlloc, chartAUM } from '../adminData'
 
@@ -24,7 +25,11 @@ const kpis = [
   {label:'صافي الأصول الجديدة',value:'$12.4M',change:'▲ +5.1%',color:'#8B5CF6'},
 ]
 
+const periods = ['أسبوع','شهر','ربع','سنة']
+
 export default function Reports() {
+  const [period, setPeriod] = useState('شهر')
+
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
@@ -34,15 +39,14 @@ export default function Reports() {
         </div>
         <div style={{display:'flex',gap:8}}>
           <div style={{display:'flex',gap:2,background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:8,padding:3}}>
-            {['أسبوع','شهر','ربع','سنة'].map(p=>(
-              <button key={p} style={{padding:'5px 10px',background: p==='شهر' ? '#F1F5F9' : 'transparent',border:'none',borderRadius:6,color: p==='شهر' ? '#1E293B' : '#64748B',fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>{p}</button>
+            {periods.map(p=>(
+              <button key={p} onClick={()=>setPeriod(p)} style={{padding:'5px 10px',background: p===period ? '#F1F5F9' : 'transparent',border:'none',borderRadius:6,color: p===period ? '#1E293B' : '#64748B',fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>{p}</button>
             ))}
           </div>
           <button style={{display:'flex',alignItems:'center',gap:6,padding:'8px 14px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>📥 تصدير PDF</button>
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
         {kpis.map((k,i)=>(
           <div key={i} style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:16}}>
@@ -53,7 +57,6 @@ export default function Reports() {
         ))}
       </div>
 
-      {/* Row 1 */}
       <div style={{display:'grid',gridTemplateColumns:'2fr 1fr',gap:16}}>
         <div style={C.card}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
@@ -92,7 +95,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Row 2 */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
         <div style={C.card}>
           <div style={{fontSize:'0.875rem',fontWeight:700,color:'#1E293B',marginBottom:14}}>نمو AUM</div>
@@ -121,7 +123,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Top Performers + Advisors */}
       <div style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:16}}>
         <div style={C.card}>
           <div style={{fontSize:'0.875rem',fontWeight:700,color:'#1E293B',marginBottom:14}}>أفضل العملاء أداءً</div>

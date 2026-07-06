@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { mockNotifications } from '../adminData'
+import { useState, useEffect } from 'react'
+import { getNotifications, markNotificationRead } from '../../../lib/api'
+import type { Notification } from '../../../lib/api'
 
 const typeColors: Record<string,{color:string;bg:string}> = {
   critical:{color:'#FF4560',bg:'rgba(255,69,96,0.08)'},
@@ -8,13 +9,49 @@ const typeColors: Record<string,{color:string;bg:string}> = {
   success:{color:'#00D97E',bg:'rgba(0,217,126,0.08)'},
 }
 
-export default function Notifications() {
-  const [notifs, setNotifs] = useState(mockNotifications)
-  const [filter, setFilter] = useState('all')
+type UINotif = {
+  id: string; type: string; icon: string; title: string
+  desc: string; time: string; read: boolean; actions: string[]
+}
 
-  const markAllRead = () => setNotifs(n => n.map(x => ({...x,read:true})))
-  const markRead = (id:number) => setNotifs(n => n.map(x => x.id===id ? {...x,read:true} : x))
-  const deleteNotif = (id:number) => setNotifs(n => n.filter(x => x.id!==id))
+function toUI(n: Notification): UINotif {
+  const typeGuess = (n.type || 'info') as string
+  const iconMap: Record<string,string> = { critical:'🔴', warning:'🟡', info:'🔵', success:'🟢' }
+  return {
+    id: String(n.id),
+    type: typeGuess,
+    icon: iconMap[typeGuess] || '🔔',
+    title: n.title || 'إشعار',
+    desc: n.message || '',
+    time: new Date(n.created_at).toLocaleTimeString('ar', { hour:'2-digit', minute:'2-digit' }),
+    read: n.is_read,
+    actions: [],
+  }
+}
+
+export default function Notifications() {
+  const [notifs, setNotifs] = useState<UINotif[]>([])
+  const [filter, setFilter] = useState('all')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    getNotifications()
+      .then(res => setNotifs(res.notifications.map(toUI)))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const markAllRead = () => {
+    setNotifs(n => n.map(x => ({...x, read: true})))
+    markNotificationRead('all' as unknown as string).catch(() => {})
+  }
+
+  const markRead = (id: string) => {
+    setNotifs(n => n.map(x => x.id === id ? {...x, read: true} : x))
+    markNotificationRead(id).catch(() => {})
+  }
+
+  const deleteNotif = (id: string) => setNotifs(n => n.filter(x => x.id !== id))
 
   const filtered = notifs.filter(n => {
     if (filter==='all') return true
@@ -53,13 +90,12 @@ export default function Notifications() {
         </button>
       </div>
 
-      {/* Summary */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
         {[
           {label:'إجمالي',value:notifs.length,color:'#64748B',icon:'🔔'},
           {label:'غير مقروء',value:unread,color:'#FF4560',icon:'🔴'},
           {label:'عاجل',value:notifs.filter(n=>n.type==='critical').length,color:'#FF4560',icon:'⚠️'},
-          {label:'اليوم',value:notifs.filter(n=>!n.time.includes('أمس')).length,color:'#0EA5E9',icon:'📅'},
+          {label:'اليوم',value:notifs.length,color:'#0EA5E9',icon:'📅'},
         ].map((s,i)=>(
           <div key={i} style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:12,padding:'14px 16px',display:'flex',alignItems:'center',gap:12}}>
             <span style={{fontSize:'1.4rem'}}>{s.icon}</span>
@@ -72,7 +108,6 @@ export default function Notifications() {
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 320px',gap:20}}>
-        {/* Notifications List */}
         <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,overflow:'hidden'}}>
           <div style={{padding:'12px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',gap:6,overflowX:'auto'}}>
             {tabs.map(t=>(
@@ -83,7 +118,9 @@ export default function Notifications() {
             ))}
           </div>
           <div style={{display:'flex',flexDirection:'column'}}>
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div style={{padding:40,textAlign:'center',color:'#64748B',fontSize:'0.85rem'}}>جاري التحميل...</div>
+            ) : filtered.length === 0 ? (
               <div style={{padding:40,textAlign:'center',color:'#64748B',fontSize:'0.85rem'}}>لا توجد إشعارات</div>
             ) : filtered.map(n=>(
               <div key={n.id} style={{display:'flex',gap:12,padding:'14px 16px',borderBottom:'1px solid rgba(203,213,225,0.6)',background: !n.read ? 'rgba(14,165,233,0.02)' : 'transparent',transition:'background 0.15s',cursor:'pointer'}}
@@ -97,7 +134,7 @@ export default function Notifications() {
                     <span style={{fontSize:'0.65rem',color:'#94A3B8',flexShrink:0}}>{n.time}</span>
                   </div>
                   <div style={{fontSize:'0.72rem',color:'#64748B',marginTop:3}}>{n.desc}</div>
-                  {(n.actions||[]).length > 0 && (
+                  {n.actions.length > 0 && (
                     <div style={{display:'flex',gap:6,marginTop:8}}>
                       {n.actions.map((a:string)=>(
                         <button key={a} style={{padding:'4px 10px',background:`${typeColors[n.type]?.color}15`,border:`1px solid ${typeColors[n.type]?.color}33`,borderRadius:6,color:typeColors[n.type]?.color,fontSize:'0.68rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>{a}</button>
@@ -114,7 +151,6 @@ export default function Notifications() {
           </div>
         </div>
 
-        {/* Alert Rules */}
         <div style={{display:'flex',flexDirection:'column',gap:16}}>
           <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,overflow:'hidden'}}>
             <div style={{padding:'14px 16px',borderBottom:'1px solid #E2E8F0',fontSize:'0.875rem',fontWeight:700,color:'#1E293B'}}>قواعد الإشعارات</div>
@@ -126,7 +162,7 @@ export default function Notifications() {
                     <div style={{fontSize:'0.75rem',color:'#1E293B',lineHeight:1.4}}>{r.label}</div>
                     <div style={{fontSize:'0.62rem',color:'#64748B',marginTop:2}}>{r.channel}</div>
                   </div>
-                  <div onClick={()=>{}} style={{width:36,height:20,borderRadius:20,background: r.enabled ? '#0EA5E9' : '#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
+                  <div style={{width:36,height:20,borderRadius:20,background: r.enabled ? '#0EA5E9' : '#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
                     <div style={{position:'absolute',top:2,right: r.enabled ? 2 : 'auto',left: r.enabled ? 'auto' : 2,width:16,height:16,borderRadius:'50%',background:'white',transition:'all 0.3s'}}/>
                   </div>
                 </div>

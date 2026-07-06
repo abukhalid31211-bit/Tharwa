@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Save, Eye, RefreshCw } from 'lucide-react'
 import { mockHeroData, mockTrustBadges, mockSiteStats } from '../adminData'
+import { saveSettings } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
@@ -43,7 +44,19 @@ export default function HeroManager() {
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<'hero'|'badges'|'stats'>('hero')
 
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false), 2000) }
+  const save = async () => {
+    try {
+      await saveSettings({
+        hero_data: JSON.stringify(hero),
+        trust_badges: JSON.stringify(badges),
+        site_stats: JSON.stringify(stats),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      alert('حدث خطأ أثناء الحفظ')
+    }
+  }
 
   const updateBadge = (id:number, field:string, value:unknown) =>
     setBadges(b => b.map(x => x.id===id ? {...x,[field]:value} : x))

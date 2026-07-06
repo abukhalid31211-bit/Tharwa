@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { mockLogs } from '../adminData'
-import { Shield, Lock, Eye, EyeOff } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 const sessions = [
   {device:'💻',name:'Chrome — Windows 11',ip:'197.48.12.55',location:'الرياض، SA',time:'الآن',current:true},
@@ -13,10 +13,29 @@ const threats = [
   {ip:'185.220.101.45',country:'🇩🇪 ألمانيا',attempts:2,lastAttempt:'أمس 22:10',status:'مراقبة'},
 ]
 
+type SecuritySection = {
+  title: string; icon: string
+  items: { label: string; on: boolean }[]
+}
+
+const defaultSections: SecuritySection[] = [
+  {title:'المصادقة الثنائية (2FA)',icon:'🔐',items:[{label:'المصادقة بالبريد',on:true},{label:'رمز SMS',on:false},{label:'تطبيق Authenticator',on:false}]},
+  {title:'سياسة كلمة المرور',icon:'🔑',items:[{label:'تغيير كل 90 يوم',on:true},{label:'8 أحرف على الأقل',on:true},{label:'منع إعادة استخدام',on:true}]},
+  {title:'القيود الجغرافية',icon:'🌍',items:[{label:'السماح فقط بدول الخليج',on:false},{label:'حظر IPs المشبوهة تلقائياً',on:true},{label:'تسجيل كل الدخولات',on:true}]},
+  {title:'إعدادات الجلسة',icon:'⏱️',items:[{label:'انتهاء بعد 30 دقيقة خمول',on:true},{label:'جلسة واحدة في كل وقت',on:false},{label:'إشعار عند تسجيل دخول جديد',on:true}]},
+]
+
 export default function Security() {
   const [activeTab, setActiveTab] = useState<'logs'|'sessions'|'threats'|'settings'>('logs')
   const [logFilter, setLogFilter] = useState('all')
-  const [show2FA, setShow2FA] = useState(false)
+  const [sections, setSections] = useState<SecuritySection[]>(defaultSections)
+
+  const toggleItem = (si: number, ii: number) => {
+    setSections(prev => prev.map((s, sIdx) => sIdx !== si ? s : {
+      ...s,
+      items: s.items.map((item, iIdx) => iIdx !== ii ? item : { ...item, on: !item.on })
+    }))
+  }
 
   const summaryCards = [
     {label:'محاولات فاشلة اليوم',value:'3',icon:'🔴',color:'#FF4560'},
@@ -46,7 +65,6 @@ export default function Security() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div style={{display:'flex',gap:4,background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:10,padding:4,width:'fit-content'}}>
         {([{k:'logs',l:'سجلات النشاط'},{k:'sessions',l:'الجلسات النشطة'},{k:'threats',l:'التهديدات'},{k:'settings',l:'إعدادات الأمان'}] as const).map(t=>(
           <button key={t.k} onClick={()=>setActiveTab(t.k)} style={{padding:'7px 16px',background: activeTab===t.k ? '#F1F5F9' : 'transparent',border:'none',borderRadius:7,color: activeTab===t.k ? '#1E293B' : '#64748B',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",whiteSpace:'nowrap',fontWeight: activeTab===t.k ? 600 : 400}}>
@@ -55,7 +73,6 @@ export default function Security() {
         ))}
       </div>
 
-      {/* Activity Logs */}
       {activeTab==='logs' && (
         <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,overflow:'hidden'}}>
           <div style={{padding:'12px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',gap:8,alignItems:'center'}}>
@@ -91,7 +108,6 @@ export default function Security() {
         </div>
       )}
 
-      {/* Active Sessions */}
       {activeTab==='sessions' && (
         <div style={{display:'flex',flexDirection:'column',gap:12}}>
           {sessions.map((s,i)=>(
@@ -119,7 +135,6 @@ export default function Security() {
         </div>
       )}
 
-      {/* Threats */}
       {activeTab==='threats' && (
         <div style={{display:'flex',flexDirection:'column',gap:16}}>
           <div style={{background:'rgba(255,69,96,0.06)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:12,padding:'12px 16px',display:'flex',alignItems:'center',gap:10}}>
@@ -143,25 +158,19 @@ export default function Security() {
         </div>
       )}
 
-      {/* Security Settings */}
       {activeTab==='settings' && (
         <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-          {[
-            {title:'المصادقة الثنائية (2FA)',icon:'🔐',items:[{label:'المصادقة بالبريد',on:true},{label:'رمز SMS',on:false},{label:'تطبيق Authenticator',on:false}]},
-            {title:'سياسة كلمة المرور',icon:'🔑',items:[{label:'تغيير كل 90 يوم',on:true},{label:'8 أحرف على الأقل',on:true},{label:'منع إعادة استخدام',on:true}]},
-            {title:'القيود الجغرافية',icon:'🌍',items:[{label:'السماح فقط بدول الخليج',on:false},{label:'حظر IPs المشبوهة تلقائياً',on:true},{label:'تسجيل كل الدخولات',on:true}]},
-            {title:'إعدادات الجلسة',icon:'⏱️',items:[{label:'انتهاء بعد 30 دقيقة خمول',on:true},{label:'جلسة واحدة في كل وقت',on:false},{label:'إشعار عند تسجيل دخول جديد',on:true}]},
-          ].map((section,si)=>(
+          {sections.map((section, si)=>(
             <div key={si} style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,overflow:'hidden'}}>
               <div style={{padding:'14px 16px',borderBottom:'1px solid #E2E8F0',display:'flex',alignItems:'center',gap:8}}>
                 <span style={{fontSize:'1.1rem'}}>{section.icon}</span>
                 <span style={{fontSize:'0.85rem',fontWeight:700,color:'#1E293B'}}>{section.title}</span>
               </div>
               <div style={{padding:'4px 0'}}>
-                {section.items.map((item,ii)=>(
+                {section.items.map((item, ii)=>(
                   <div key={ii} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 16px',borderBottom: ii<section.items.length-1 ? '1px solid rgba(203,213,225,0.5)' : 'none'}}>
                     <span style={{fontSize:'0.78rem',color:'#1E293B'}}>{item.label}</span>
-                    <div style={{width:40,height:22,borderRadius:22,background: item.on ? '#0EA5E9' : '#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
+                    <div onClick={()=>toggleItem(si, ii)} style={{width:40,height:22,borderRadius:22,background: item.on ? '#0EA5E9' : '#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
                       <div style={{position:'absolute',top:3,left: item.on ? 'auto' : 3,right: item.on ? 3 : 'auto',width:16,height:16,borderRadius:'50%',background:'white',transition:'all 0.3s'}}/>
                     </div>
                   </div>

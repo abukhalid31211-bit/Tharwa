@@ -1,10 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, X, Star, Eye } from 'lucide-react'
-import { mockTestimonials } from '../adminData'
+import { getTestimonials, createTestimonial, updateTestimonial, deleteTestimonial } from '../../../lib/api'
+import type { Testimonial } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
-
-type Testimonial = typeof mockTestimonials[0]
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
   return <div onClick={()=>onChange(!on)} style={{width:36,height:19,borderRadius:20,background:on?S.gold:'#E2E8F0',position:'relative',cursor:'pointer',transition:'background 0.3s',flexShrink:0}}>
@@ -34,31 +33,58 @@ function Field({label,value,onChange,rows=0}:{label:string;value:string;onChange
 }
 
 export default function TestimonialsManager() {
-  const [items, setItems] = useState<Testimonial[]>([...mockTestimonials])
+  const [items, setItems] = useState<Testimonial[]>([])
+  const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<Testimonial|null>(null)
   const [isNew, setIsNew] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    getTestimonials()
+      .then(res => setItems(res.items))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
 
   const openNew = () => {
     setIsNew(true)
     setEditing({id:Date.now(),name:'',role:'',city:'',text:'',rating:5,visible:true,order:items.length+1})
   }
 
-  const saveItem = (item:Testimonial) => {
-    if (isNew) setItems(prev=>[...prev,item])
-    else setItems(prev=>prev.map(x=>x.id===item.id?item:x))
-    setEditing(null); setIsNew(false); setSaved(true); setTimeout(()=>setSaved(false),2000)
+  const saveItem = async (item:Testimonial) => {
+    try {
+      if (isNew) {
+        const { item: saved } = await createTestimonial(item)
+        setItems(prev=>[...prev,saved])
+      } else {
+        const { item: saved } = await updateTestimonial(item.id, item)
+        setItems(prev=>prev.map(x=>x.id===item.id?saved:x))
+      }
+      setEditing(null); setIsNew(false); setSaved(true); setTimeout(()=>setSaved(false),2000)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
   }
 
-  const del = (id:number) => setItems(prev=>prev.filter(x=>x.id!==id))
-  const toggle = (id:number) => setItems(prev=>prev.map(x=>x.id===id?{...x,visible:!x.visible}:x))
+  const del = async (id:number) => {
+    await deleteTestimonial(id).catch(()=>{})
+    setItems(prev=>prev.filter(x=>x.id!==id))
+  }
+
+  const toggle = async (id:number) => {
+    const item = items.find(x=>x.id===id)
+    if (!item) return
+    const updated = { ...item, visible: !item.visible }
+    setItems(prev=>prev.map(x=>x.id===id?updated:x))
+    await updateTestimonial(id, { visible: updated.visible }).catch(()=>{})
+  }
+
+  const avgRating = items.length ? (items.reduce((s,i)=>s+i.rating,0)/items.length).toFixed(1) : '0.0'
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
         <div>
           <h1 style={{fontSize:'1.4rem',fontWeight:800,color:S.text,margin:0}}>إدارة الشهادات والتقييمات</h1>
-          <p style={{fontSize:'0.78rem',color:S.muted,marginTop:3}}>{items.length} شهادة — متوسط {(items.reduce((s,i)=>s+i.rating,0)/items.length).toFixed(1)} ⭐</p>
+          <p style={{fontSize:'0.78rem',color:S.muted,marginTop:3}}>{items.length} شهادة — متوسط {avgRating} ⭐</p>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {saved && <span style={{fontSize:'0.75rem',color:S.green}}>✓ تم الحفظ</span>}
@@ -71,12 +97,11 @@ export default function TestimonialsManager() {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
         {[{l:'إجمالي الشهادات',v:items.length,c:'#3B82F6',i:'💬'},
           {l:'ظاهرة',v:items.filter(x=>x.visible).length,c:S.green,i:'✅'},
           {l:'تقييم 5 نجوم',v:items.filter(x=>x.rating===5).length,c:S.gold,i:'⭐'},
-          {l:'متوسط التقييم',v:(items.reduce((s,i)=>s+i.rating,0)/items.length).toFixed(1),c:S.gold,i:'📊'},
+          {l:'متوسط التقييم',v:avgRating,c:S.gold,i:'📊'},
         ].map((x,i)=>(
           <div key={i} style={{background:S.card,border:`1px solid ${S.border}`,borderRadius:12,padding:16,display:'flex',alignItems:'center',gap:12}}>
             <span style={{fontSize:'1.4rem'}}>{x.i}</span>
@@ -85,48 +110,46 @@ export default function TestimonialsManager() {
         ))}
       </div>
 
-      {/* Testimonial Cards Grid */}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
-        {items.map(item=>(
-          <div key={item.id} style={{background:S.card,border:`1px solid ${item.visible?S.border:'rgba(203,213,225,0.6)'}`,borderRadius:14,padding:20,display:'flex',flexDirection:'column',gap:14,opacity:item.visible?1:0.6}}>
-            {/* Header */}
-            <div style={{display:'flex',alignItems:'center',gap:12}}>
-              <div style={{width:48,height:48,borderRadius:'50%',background:`linear-gradient(135deg,rgba(14,165,233,0.2),rgba(14,165,233,0.05))`,border:`1px solid rgba(14,165,233,0.2)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',fontWeight:800,color:S.gold,flexShrink:0}}>
-                {item.name ? item.name.charAt(0) : '?'}
+      {loading ? (
+        <div style={{padding:32,textAlign:'center',color:S.muted,fontSize:'0.82rem'}}>جاري التحميل...</div>
+      ) : (
+        <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:16}}>
+          {items.map(item=>(
+            <div key={item.id} style={{background:S.card,border:`1px solid ${item.visible?S.border:'rgba(203,213,225,0.6)'}`,borderRadius:14,padding:20,display:'flex',flexDirection:'column',gap:14,opacity:item.visible?1:0.6}}>
+              <div style={{display:'flex',alignItems:'center',gap:12}}>
+                <div style={{width:48,height:48,borderRadius:'50%',background:`linear-gradient(135deg,rgba(14,165,233,0.2),rgba(14,165,233,0.05))`,border:`1px solid rgba(14,165,233,0.2)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1.2rem',fontWeight:800,color:S.gold,flexShrink:0}}>
+                  {item.name ? item.name.charAt(0) : '?'}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:'0.88rem',fontWeight:700,color:S.text}}>{item.name||'(بدون اسم)'}</div>
+                  <div style={{fontSize:'0.72rem',color:S.muted,marginTop:2}}>{item.role} — {item.city}</div>
+                </div>
+                <Toggle on={item.visible} onChange={()=>toggle(item.id)}/>
               </div>
-              <div style={{flex:1}}>
-                <div style={{fontSize:'0.88rem',fontWeight:700,color:S.text}}>{item.name||'(بدون اسم)'}</div>
-                <div style={{fontSize:'0.72rem',color:S.muted,marginTop:2}}>{item.role} — {item.city}</div>
+
+              <div style={{display:'flex',gap:2}}>
+                {[1,2,3,4,5].map(n=>(
+                  <Star key={n} size={14} fill={n<=item.rating?S.gold:'transparent'} color={n<=item.rating?S.gold:'rgba(203,213,225,0.8)'}/>
+                ))}
               </div>
-              <Toggle on={item.visible} onChange={()=>toggle(item.id)}/>
+
+              <p style={{fontSize:'0.82rem',color:S.muted,lineHeight:1.8,margin:0,flex:1}}>
+                "{item.text}"
+              </p>
+
+              <div style={{display:'flex',gap:6,borderTop:`1px solid ${S.border}`,paddingTop:12}}>
+                <button onClick={()=>{setEditing({...item});setIsNew(false)}} style={{flex:1,padding:'7px',background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:7,color:S.gold,fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                  <Edit size={11}/> تعديل
+                </button>
+                <button onClick={()=>del(item.id)} style={{width:32,background:`rgba(255,69,96,0.1)`,border:`1px solid rgba(255,69,96,0.2)`,borderRadius:7,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.red}}>
+                  <Trash2 size={11}/>
+                </button>
+              </div>
             </div>
+          ))}
+        </div>
+      )}
 
-            {/* Stars */}
-            <div style={{display:'flex',gap:2}}>
-              {[1,2,3,4,5].map(n=>(
-                <Star key={n} size={14} fill={n<=item.rating?S.gold:'transparent'} color={n<=item.rating?S.gold:'rgba(203,213,225,0.8)'}/>
-              ))}
-            </div>
-
-            {/* Text */}
-            <p style={{fontSize:'0.82rem',color:S.muted,lineHeight:1.8,margin:0,flex:1}}>
-              "{item.text}"
-            </p>
-
-            {/* Actions */}
-            <div style={{display:'flex',gap:6,borderTop:`1px solid ${S.border}`,paddingTop:12}}>
-              <button onClick={()=>{setEditing({...item});setIsNew(false)}} style={{flex:1,padding:'7px',background:`rgba(14,165,233,0.1)`,border:`1px solid rgba(14,165,233,0.2)`,borderRadius:7,color:S.gold,fontSize:'0.72rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-                <Edit size={11}/> تعديل
-              </button>
-              <button onClick={()=>del(item.id)} style={{width:32,background:`rgba(255,69,96,0.1)`,border:`1px solid rgba(255,69,96,0.2)`,borderRadius:7,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:S.red}}>
-                <Trash2 size={11}/>
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Edit Modal */}
       {editing && (
         <div style={{position:'fixed',inset:0,background:'rgba(100,116,139,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
           <div style={{background:'#FFFFFF',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:560}} onClick={e=>e.stopPropagation()}>
@@ -137,9 +160,9 @@ export default function TestimonialsManager() {
             <div style={{padding:24,display:'flex',flexDirection:'column',gap:14}}>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                 <Field label="الاسم الكامل" value={editing.name} onChange={v=>setEditing({...editing,name:v})}/>
-                <Field label="المدينة" value={editing.city} onChange={v=>setEditing({...editing,city:v})}/>
+                <Field label="المدينة" value={editing.city||''} onChange={v=>setEditing({...editing,city:v})}/>
                 <div style={{gridColumn:'1/-1'}}>
-                  <Field label="الوظيفة / الصفة" value={editing.role} onChange={v=>setEditing({...editing,role:v})}/>
+                  <Field label="الوظيفة / الصفة" value={editing.role||''} onChange={v=>setEditing({...editing,role:v})}/>
                 </div>
               </div>
               <Field label="نص الشهادة" value={editing.text} onChange={v=>setEditing({...editing,text:v})} rows={4}/>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Save, Eye, RotateCcw } from 'lucide-react'
-import { getPrivacyPolicy, setPrivacyPolicy } from '../../../lib/store'
+import { getSettings, saveSettings } from '../../../lib/api'
+
+const SETTING_KEY = 'privacy_policy_text'
 
 const DEFAULT_POLICY = `سياسة الخصوصية — الثروة كابيتال
 
@@ -28,16 +30,27 @@ export default function PrivacyPolicyManager() {
   const [text, setText] = useState('')
   const [preview, setPreview] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = getPrivacyPolicy()
-    setText(stored || DEFAULT_POLICY)
+    getSettings()
+      .then(({ settings }) => {
+        setText(settings[SETTING_KEY] || DEFAULT_POLICY)
+      })
+      .catch(() => {
+        setText(DEFAULT_POLICY)
+      })
+      .finally(() => setLoading(false))
   }, [])
 
-  const handleSave = () => {
-    setPrivacyPolicy(text)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+  const handleSave = async () => {
+    try {
+      await saveSettings({ [SETTING_KEY]: text })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    } catch {
+      alert('حدث خطأ أثناء الحفظ. تحقق من الاتصال.')
+    }
   }
 
   const handleReset = () => {
@@ -45,6 +58,8 @@ export default function PrivacyPolicyManager() {
       setText(DEFAULT_POLICY)
     }
   }
+
+  if (loading) return <div style={{padding:40,textAlign:'center',color:'#64748B'}}>جاري التحميل...</div>
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -77,7 +92,6 @@ export default function PrivacyPolicyManager() {
         </div>
       </div>
 
-      {/* Info card */}
       <div style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.2)', borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: '0.8rem', color: '#0369A1' }}>
         <span style={{ fontSize: '1rem', flexShrink: 0, marginTop: 1 }}>ℹ️</span>
         <span>

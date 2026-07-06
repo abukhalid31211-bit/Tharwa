@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Eye, Edit, Trash2, X, Bold, Italic, Link } from 'lucide-react'
-import { mockArticles } from '../adminData'
+import { getArticles, createArticle, updateArticle, deleteArticle } from '../../../lib/api'
+import type { Article } from '../../../lib/api'
 
 const statusBadge = (s:string) => ({published:{bg:'rgba(0,217,126,0.1)',color:'#00D97E',label:'🟢 منشور'},draft:{bg:'rgba(245,158,11,0.1)',color:'#F59E0B',label:'🟡 مسودة'}}[s]||{bg:'rgba(107,132,168,0.15)',color:'#64748B',label:'⚪ أرشيف'})
 
@@ -8,19 +9,66 @@ const categories = ['تحليل','أسهم','رقمي','معادن','فوركس'
 
 export default function Content() {
   const [tab, setTab] = useState('articles')
+  const [articles, setArticles] = useState<Article[]>([])
+  const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
+  const [editingArticle, setEditingArticle] = useState<Article|null>(null)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const [cat, setCat] = useState('تحليل')
+  const [articleStatus, setArticleStatus] = useState<'published'|'draft'>('draft')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [saving, setSaving] = useState(false)
 
-  const filtered = mockArticles.filter(a => statusFilter==='all' || a.status===statusFilter)
+  useEffect(() => {
+    getArticles()
+      .then(res => setArticles(res.articles))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  const filtered = articles.filter(a => statusFilter==='all' || a.status===statusFilter)
+
   const stats = [
-    {label:'إجمالي المقالات',value:mockArticles.length,icon:'📰',color:'#3B82F6'},
-    {label:'منشور',value:mockArticles.filter(a=>a.status==='published').length,icon:'🟢',color:'#00D97E'},
-    {label:'مسودة',value:mockArticles.filter(a=>a.status==='draft').length,icon:'🟡',color:'#F59E0B'},
-    {label:'إجمالي المشاهدات',value:mockArticles.reduce((s,a)=>s+a.views,0).toLocaleString(),icon:'👁️',color:'#0EA5E9'},
+    {label:'إجمالي المقالات',value:articles.length,icon:'📰',color:'#3B82F6'},
+    {label:'منشور',value:articles.filter(a=>a.status==='published').length,icon:'🟢',color:'#00D97E'},
+    {label:'مسودة',value:articles.filter(a=>a.status==='draft').length,icon:'🟡',color:'#F59E0B'},
+    {label:'إجمالي المشاهدات',value:'—',icon:'👁️',color:'#0EA5E9'},
   ]
+
+  const openNew = () => {
+    setEditingArticle(null)
+    setTitle(''); setBody(''); setCat('تحليل'); setArticleStatus('draft')
+    setShowEditor(true)
+  }
+
+  const openEdit = (a: Article) => {
+    setEditingArticle(a)
+    setTitle(a.title); setBody(a.body || ''); setCat(a.category || 'تحليل'); setArticleStatus(a.status)
+    setShowEditor(true)
+  }
+
+  const handleSave = async (status: 'published'|'draft') => {
+    if (!title.trim()) return
+    setSaving(true)
+    try {
+      if (editingArticle) {
+        const { article } = await updateArticle(editingArticle.id, { title, body, category: cat, status })
+        setArticles(prev => prev.map(x => x.id === article.id ? article : x))
+      } else {
+        const { article } = await createArticle({ title, body, category: cat, status })
+        setArticles(prev => [article, ...prev])
+      }
+      setShowEditor(false)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
+    setSaving(false)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('هل تريد حذف هذا المقال؟')) return
+    await deleteArticle(id).catch(() => {})
+    setArticles(prev => prev.filter(a => a.id !== id))
+  }
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
@@ -29,7 +77,7 @@ export default function Content() {
           <h1 style={{fontSize:'1.4rem',fontWeight:800,color:'#1E293B',margin:0}}>إدارة المحتوى</h1>
           <p style={{fontSize:'0.78rem',color:'#64748B',marginTop:3}}>المقالات والأخبار والإعلانات</p>
         </div>
-        <button onClick={()=>setShowEditor(true)} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
+        <button onClick={openNew} style={{display:'flex',alignItems:'center',gap:6,padding:'9px 16px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:700,fontSize:'0.82rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>
           <Plus size={14}/> مقال جديد
         </button>
       </div>
@@ -46,7 +94,6 @@ export default function Content() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div style={{display:'flex',gap:4,background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:10,padding:4,width:'fit-content'}}>
         {[{k:'articles',l:'المقالات'},{k:'news',l:'الأخبار'},{k:'announcements',l:'الإعلانات'},{k:'media',l:'مكتبة الوسائط'}].map(t=>(
           <button key={t.k} onClick={()=>setTab(t.k)} style={{padding:'7px 16px',background: tab===t.k ? '#F1F5F9' : 'transparent',border:'none',borderRadius:7,color: tab===t.k ? '#1E293B' : '#64748B',fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontWeight: tab===t.k ? 600 : 400}}>{t.l}</button>
@@ -63,29 +110,29 @@ export default function Content() {
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',minWidth:800}}>
               <thead>
-                <tr>{['العنوان','التصنيف','الكاتب','المشاهدات','التعليقات','الحالة','التاريخ','إجراءات'].map(h=>(
+                <tr>{['العنوان','التصنيف','الكاتب','الحالة','التاريخ','إجراءات'].map(h=>(
                   <th key={h} style={{padding:'10px 14px',textAlign:'right',fontSize:'0.7rem',fontWeight:600,color:'#64748B',borderBottom:'1px solid #E2E8F0',background:'#F1F5F9',whiteSpace:'nowrap'}}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
-                {filtered.map(a=>(
+                {loading ? (
+                  <tr><td colSpan={6} style={{padding:32,textAlign:'center',color:'#64748B',fontSize:'0.82rem'}}>جاري التحميل...</td></tr>
+                ) : filtered.map(a=>(
                   <tr key={a.id} onMouseEnter={e=>e.currentTarget.style.background='rgba(14,165,233,0.03)'} onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
                     <td style={{padding:'12px 14px',fontSize:'0.8rem',color:'#1E293B',borderBottom:'1px solid rgba(203,213,225,0.6)',fontWeight:600,maxWidth:220}}>{a.title}</td>
                     <td style={{padding:'12px 14px',borderBottom:'1px solid rgba(203,213,225,0.6)'}}>
-                      <span style={{background:'rgba(59,130,246,0.1)',color:'#3B82F6',borderRadius:6,padding:'3px 9px',fontSize:'0.68rem',fontWeight:600}}>{a.category}</span>
+                      <span style={{background:'rgba(59,130,246,0.1)',color:'#3B82F6',borderRadius:6,padding:'3px 9px',fontSize:'0.68rem',fontWeight:600}}>{a.category || '—'}</span>
                     </td>
-                    <td style={{padding:'12px 14px',fontSize:'0.78rem',color:'#1E293B',borderBottom:'1px solid rgba(203,213,225,0.6)'}}>{a.author}</td>
-                    <td style={{padding:'12px 14px',fontSize:'0.78rem',color:'#0EA5E9',borderBottom:'1px solid rgba(203,213,225,0.6)',fontFamily:'monospace'}}>{a.views.toLocaleString()}</td>
-                    <td style={{padding:'12px 14px',fontSize:'0.78rem',color:'#64748B',borderBottom:'1px solid rgba(203,213,225,0.6)',fontFamily:'monospace'}}>{a.comments}</td>
+                    <td style={{padding:'12px 14px',fontSize:'0.78rem',color:'#1E293B',borderBottom:'1px solid rgba(203,213,225,0.6)'}}>{a.author || '—'}</td>
                     <td style={{padding:'12px 14px',borderBottom:'1px solid rgba(203,213,225,0.6)'}}>
                       <span style={{...statusBadge(a.status),borderRadius:20,padding:'3px 9px',fontSize:'0.68rem',fontWeight:600}}>{statusBadge(a.status).label}</span>
                     </td>
-                    <td style={{padding:'12px 14px',fontSize:'0.7rem',color:'#64748B',borderBottom:'1px solid rgba(203,213,225,0.6)',whiteSpace:'nowrap'}}>{a.date}</td>
+                    <td style={{padding:'12px 14px',fontSize:'0.7rem',color:'#64748B',borderBottom:'1px solid rgba(203,213,225,0.6)',whiteSpace:'nowrap'}}>{new Date(a.created_at).toLocaleDateString('ar')}</td>
                     <td style={{padding:'12px 14px',borderBottom:'1px solid rgba(203,213,225,0.6)'}}>
                       <div style={{display:'flex',gap:4}}>
                         <button onClick={()=>window.open('/news','_blank')} style={{width:28,height:28,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.3)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9'}} title="معاينة"><Eye size={12}/></button>
-                        <button style={{width:28,height:28,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9'}}><Edit size={12}/></button>
-                        <button style={{width:28,height:28,background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#FF4560'}}><Trash2 size={12}/></button>
+                        <button onClick={()=>openEdit(a)} style={{width:28,height:28,background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#0EA5E9'}}><Edit size={12}/></button>
+                        <button onClick={()=>handleDelete(a.id)} style={{width:28,height:28,background:'rgba(255,69,96,0.1)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:6,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',color:'#FF4560'}}><Trash2 size={12}/></button>
                       </div>
                     </td>
                   </tr>
@@ -138,12 +185,11 @@ export default function Content() {
         </div>
       )}
 
-      {/* Editor Modal */}
       {showEditor && (
         <div style={{position:'fixed',inset:0,background:'rgba(100,116,139,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setShowEditor(false)}>
           <div style={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:16,width:'100%',maxWidth:720,maxHeight:'90vh',overflow:'auto'}} onClick={e=>e.stopPropagation()}>
             <div style={{padding:'16px 20px',borderBottom:'1px solid #E2E8F0',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontWeight:700,color:'#1E293B'}}>محرر المقالات</span>
+              <span style={{fontWeight:700,color:'#1E293B'}}>{editingArticle ? 'تعديل المقال' : 'محرر المقالات'}</span>
               <button onClick={()=>setShowEditor(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',display:'flex'}}><X size={18}/></button>
             </div>
             <div style={{padding:24,display:'flex',flexDirection:'column',gap:16}}>
@@ -152,8 +198,8 @@ export default function Content() {
                 <select value={cat} onChange={e=>setCat(e.target.value)} style={{padding:'9px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",outline:'none'}}>
                   {categories.map(c=><option key={c}>{c}</option>)}
                 </select>
-                <select style={{padding:'9px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",outline:'none'}}>
-                  <option>منشور</option><option>مسودة</option>
+                <select value={articleStatus} onChange={e=>setArticleStatus(e.target.value as 'published'|'draft')} style={{padding:'9px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",outline:'none'}}>
+                  <option value="published">منشور</option><option value="draft">مسودة</option>
                 </select>
               </div>
               <div style={{background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,overflow:'hidden'}}>
@@ -166,8 +212,8 @@ export default function Content() {
                   style={{width:'100%',padding:'14px',background:'none',border:'none',color:'#1E293B',fontSize:'0.85rem',fontFamily:"'Cairo',sans-serif",resize:'vertical',outline:'none',boxSizing:'border-box'}}/>
               </div>
               <div style={{display:'flex',gap:8}}>
-                <button style={{flex:1,padding:'11px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>🚀 نشر الآن</button>
-                <button style={{flex:1,padding:'11px',background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',borderRadius:8,color:'#F59E0B',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>💾 حفظ كمسودة</button>
+                <button onClick={()=>handleSave('published')} disabled={saving} style={{flex:1,padding:'11px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem',opacity:saving?0.7:1}}>🚀 {saving?'جاري الحفظ...':'نشر الآن'}</button>
+                <button onClick={()=>handleSave('draft')} disabled={saving} style={{flex:1,padding:'11px',background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',borderRadius:8,color:'#F59E0B',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem',opacity:saving?0.7:1}}>💾 حفظ كمسودة</button>
               </div>
             </div>
           </div>

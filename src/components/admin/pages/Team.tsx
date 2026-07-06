@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Plus, X, Mail, Shield } from 'lucide-react'
+import { Plus, X, Shield } from 'lucide-react'
 import { mockTeam, roleLabels } from '../adminData'
+import { createSubAdmin } from '../../../lib/api'
 
 const roleBadge: Record<string,{bg:string;color:string}> = {
   SUPER_ADMIN:{bg:'rgba(14,165,233,0.15)',color:'#0EA5E9'},
@@ -21,7 +22,11 @@ export default function Team() {
   const [viewMember, setViewMember] = useState<typeof mockTeam[0]|null>(null)
   const [newName, setNewName] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
   const [newRole, setNewRole] = useState('ADVISOR')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const stats = [
     {label:'Super Admin',count:mockTeam.filter(t=>t.role==='SUPER_ADMIN').length,icon:'👑',color:'#0EA5E9'},
@@ -29,6 +34,28 @@ export default function Team() {
     {label:'مستشارون',count:mockTeam.filter(t=>t.role==='ADVISOR').length,icon:'🟡',color:'#F59E0B'},
     {label:'المحررون',count:mockTeam.filter(t=>t.role==='CONTENT_MANAGER').length,icon:'🟢',color:'#00D97E'},
   ]
+
+  const handleAddMember = async () => {
+    if (!newName.trim() || !newEmail.trim() || !newPassword.trim()) {
+      setError('جميع الحقول مطلوبة')
+      return
+    }
+    if (newPassword.length < 6) {
+      setError('كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+      return
+    }
+    setError('')
+    setSaving(true)
+    try {
+      await createSubAdmin({ name: newName.trim(), email: newEmail.trim(), password: newPassword })
+      setSuccess('تم إضافة العضو بنجاح')
+      setNewName(''); setNewEmail(''); setNewPassword(''); setNewRole('ADVISOR')
+      setTimeout(() => { setSuccess(''); setShowModal(false) }, 1500)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'حدث خطأ')
+    }
+    setSaving(false)
+  }
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
@@ -54,7 +81,6 @@ export default function Team() {
         ))}
       </div>
 
-      {/* Team Cards */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:16}}>
         {mockTeam.map(member=>(
           <div key={member.id} style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,padding:20,display:'flex',flexDirection:'column',gap:14}}>
@@ -107,7 +133,6 @@ export default function Team() {
         ))}
       </div>
 
-      {/* Permissions Matrix */}
       <div style={{background:'#F8FAFC',border:'1px solid #E2E8F0',borderRadius:14,overflow:'hidden'}}>
         <div style={{padding:'14px 20px',borderBottom:'1px solid #E2E8F0',display:'flex',alignItems:'center',gap:8}}>
           <Shield size={16} color="#C9A84C"/>
@@ -137,7 +162,6 @@ export default function Team() {
         </div>
       </div>
 
-      {/* Add Modal */}
       {showModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(100,116,139,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setShowModal(false)}>
           <div style={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:16,width:480}} onClick={e=>e.stopPropagation()}>
@@ -146,10 +170,10 @@ export default function Team() {
               <button onClick={()=>setShowModal(false)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',display:'flex'}}><X size={18}/></button>
             </div>
             <div style={{padding:24,display:'flex',flexDirection:'column',gap:14}}>
-              {[{label:'الاسم الكامل',value:newName,set:setNewName,placeholder:'أحمد محمد'},{label:'البريد الإلكتروني',value:newEmail,set:setNewEmail,placeholder:'ahmed@company.com'}].map(f=>(
+              {[{label:'الاسم الكامل',value:newName,set:setNewName,placeholder:'أحمد محمد',type:'text'},{label:'البريد الإلكتروني',value:newEmail,set:setNewEmail,placeholder:'ahmed@company.com',type:'email'},{label:'كلمة المرور',value:newPassword,set:setNewPassword,placeholder:'6 أحرف على الأقل',type:'password'}].map(f=>(
                 <div key={f.label}>
                   <div style={{fontSize:'0.72rem',color:'#64748B',fontWeight:600,marginBottom:6}}>{f.label}</div>
-                  <input value={f.value} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder} style={{width:'100%',padding:'10px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",boxSizing:'border-box',outline:'none'}} onFocus={e=>e.target.style.borderColor='#0EA5E9'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
+                  <input type={f.type} value={f.value} onChange={e=>f.set(e.target.value)} placeholder={f.placeholder} style={{width:'100%',padding:'10px 12px',background:'#F1F5F9',border:'1px solid #E2E8F0',borderRadius:8,color:'#1E293B',fontSize:'0.82rem',fontFamily:"'Cairo',sans-serif",boxSizing:'border-box',outline:'none'}} onFocus={e=>e.target.style.borderColor='#0EA5E9'} onBlur={e=>e.target.style.borderColor='#E2E8F0'}/>
                 </div>
               ))}
               <div>
@@ -158,7 +182,30 @@ export default function Team() {
                   {Object.entries(roleLabels).map(([k,v])=><option key={k} value={k}>{v}</option>)}
                 </select>
               </div>
-              <button style={{width:'100%',padding:'11px',background:'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>إضافة العضو</button>
+              {error && <div style={{fontSize:'0.78rem',color:'#FF4560',background:'rgba(255,69,96,0.06)',border:'1px solid rgba(255,69,96,0.2)',borderRadius:7,padding:'9px 12px'}}>{error}</div>}
+              {success && <div style={{fontSize:'0.78rem',color:'#00D97E',background:'rgba(0,217,126,0.06)',border:'1px solid rgba(0,217,126,0.2)',borderRadius:7,padding:'9px 12px'}}>{success}</div>}
+              <button onClick={handleAddMember} disabled={saving} style={{width:'100%',padding:'11px',background: saving ? '#94A3B8' : 'linear-gradient(135deg,#0EA5E9,#38BDF8)',border:'none',borderRadius:8,color:'#FFFFFF',fontWeight:800,cursor: saving ? 'not-allowed' : 'pointer',fontFamily:"'Cairo',sans-serif",fontSize:'0.85rem'}}>
+                {saving ? 'جاري الإضافة...' : 'إضافة العضو'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {viewMember && (
+        <div style={{position:'fixed',inset:0,background:'rgba(100,116,139,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000}} onClick={()=>setViewMember(null)}>
+          <div style={{background:'#FFFFFF',border:'1px solid #E2E8F0',borderRadius:16,width:400,padding:24}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <span style={{fontWeight:700,color:'#1E293B'}}>تفاصيل العضو</span>
+              <button onClick={()=>setViewMember(null)} style={{background:'none',border:'none',cursor:'pointer',color:'#64748B',display:'flex'}}><X size={18}/></button>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:10,fontSize:'0.82rem'}}>
+              {[['الاسم',viewMember.name],['البريد',viewMember.email],['الدور',roleLabels[viewMember.role]||viewMember.role],['الحالة',viewMember.status==='active'?'نشط':'موقوف'],['تاريخ الانضمام',viewMember.joined],['آخر نشاط',viewMember.lastActive]].map(([k,v])=>(
+                <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'8px 0',borderBottom:'1px solid rgba(203,213,225,0.5)'}}>
+                  <span style={{color:'#64748B'}}>{k}</span>
+                  <span style={{color:'#1E293B',fontWeight:600}}>{v}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

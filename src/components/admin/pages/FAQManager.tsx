@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, X, ChevronDown, ChevronUp, Eye } from 'lucide-react'
-import { mockFAQs, mockFAQCategories } from '../adminData'
+import { getFAQs, createFAQ, updateFAQ, deleteFAQ } from '../../../lib/api'
+import type { FAQ } from '../../../lib/api'
+import { mockFAQCategories } from '../adminData'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
-type FAQ = typeof mockFAQs[0]
 type Cat = typeof mockFAQCategories[0]
 
 function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
@@ -14,8 +15,9 @@ function Toggle({on,onChange}:{on:boolean;onChange:(v:boolean)=>void}) {
 }
 
 export default function FAQManager() {
-  const [faqs, setFaqs] = useState<FAQ[]>([...mockFAQs])
+  const [faqs, setFaqs] = useState<FAQ[]>([])
   const [cats, setCats] = useState<Cat[]>([...mockFAQCategories])
+  const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'faqs'|'categories'>('faqs')
   const [catFilter, setCatFilter] = useState(0)
   const [expanded, setExpanded] = useState<number|null>(null)
@@ -24,6 +26,13 @@ export default function FAQManager() {
   const [saved, setSaved] = useState(false)
   const [newCat, setNewCat] = useState('')
 
+  useEffect(() => {
+    getFAQs()
+      .then(res => setFaqs(res.items))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
   const filtered = catFilter===0 ? faqs : faqs.filter(f=>f.categoryId===catFilter)
 
   const openNew = () => {
@@ -31,14 +40,31 @@ export default function FAQManager() {
     setEditing({id:Date.now(),categoryId:cats[0]?.id||1,question:'',answer:'',order:faqs.length+1,visible:true})
   }
 
-  const saveFAQ = (f:FAQ) => {
-    if (isNew) setFaqs(prev=>[...prev,f])
-    else setFaqs(prev=>prev.map(x=>x.id===f.id?f:x))
-    setEditing(null); setIsNew(false); setSaved(true); setTimeout(()=>setSaved(false),2000)
+  const saveFAQ = async (f:FAQ) => {
+    try {
+      if (isNew) {
+        const { item } = await createFAQ(f)
+        setFaqs(prev=>[...prev,item])
+      } else {
+        const { item } = await updateFAQ(f.id, f)
+        setFaqs(prev=>prev.map(x=>x.id===f.id?item:x))
+      }
+      setEditing(null); setIsNew(false); setSaved(true); setTimeout(()=>setSaved(false),2000)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
   }
 
-  const delFAQ = (id:number) => setFaqs(prev=>prev.filter(f=>f.id!==id))
-  const toggleFAQ = (id:number) => setFaqs(prev=>prev.map(f=>f.id===id?{...f,visible:!f.visible}:f))
+  const delFAQ = async (id:number) => {
+    await deleteFAQ(id).catch(()=>{})
+    setFaqs(prev=>prev.filter(f=>f.id!==id))
+  }
+
+  const toggleFAQ = async (id:number) => {
+    const faq = faqs.find(f=>f.id===id)
+    if (!faq) return
+    const updated = { ...faq, visible: !faq.visible }
+    setFaqs(prev=>prev.map(f=>f.id===id?updated:f))
+    await updateFAQ(id, { visible: updated.visible }).catch(()=>{})
+  }
 
   const addCat = () => {
     if (!newCat.trim()) return
@@ -64,7 +90,6 @@ export default function FAQManager() {
         </div>
       </div>
 
-      {/* Stats */}
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:14}}>
         {[{l:'إجمالي الأسئلة',v:faqs.length,c:'#3B82F6',i:'❓'},
           {l:'مفعّل',v:faqs.filter(f=>f.visible).length,c:S.green,i:'✅'},
@@ -78,7 +103,6 @@ export default function FAQManager() {
         ))}
       </div>
 
-      {/* Tabs */}
       <div style={{display:'flex',gap:4,background:S.card,border:`1px solid ${S.border}`,borderRadius:10,padding:4,width:'fit-content'}}>
         {([['faqs','❓ الأسئلة'],['categories','📂 الأقسام']] as const).map(([k,l])=>(
           <button key={k} onClick={()=>setTab(k)} style={{padding:'7px 18px',background:tab===k?S.bg:'transparent',border:'none',borderRadius:7,color:tab===k?S.text:S.muted,fontSize:'0.78rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif",fontWeight:tab===k?600:400}}>{l}</button>
@@ -87,7 +111,6 @@ export default function FAQManager() {
 
       {tab==='faqs' && (
         <>
-          {/* Category Filter */}
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
             <button onClick={()=>setCatFilter(0)} style={{padding:'6px 14px',background:catFilter===0?`rgba(14,165,233,0.12)`:'transparent',border:`1px solid ${catFilter===0?'rgba(14,165,233,0.3)':S.border}`,borderRadius:20,color:catFilter===0?S.gold:S.muted,fontSize:'0.75rem',cursor:'pointer',fontFamily:"'Cairo',sans-serif"}}>الكل</button>
             {cats.map(c=>(
@@ -97,9 +120,10 @@ export default function FAQManager() {
             ))}
           </div>
 
-          {/* FAQ List (Accordion) */}
           <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            {filtered.map(faq=>(
+            {loading ? (
+              <div style={{padding:32,textAlign:'center',color:S.muted,fontSize:'0.82rem'}}>جاري التحميل...</div>
+            ) : filtered.map(faq=>(
               <div key={faq.id} style={{background:S.card,border:`1px solid ${faq.visible?S.border:'rgba(203,213,225,0.6)'}`,borderRadius:12,overflow:'hidden',opacity:faq.visible?1:0.6}}>
                 <div style={{padding:'14px 16px',display:'flex',alignItems:'center',gap:12,cursor:'pointer',userSelect:'none'}}
                   onClick={()=>setExpanded(expanded===faq.id?null:faq.id)}>
@@ -155,7 +179,6 @@ export default function FAQManager() {
         </div>
       )}
 
-      {/* FAQ Edit Modal */}
       {editing && (
         <div style={{position:'fixed',inset:0,background:'rgba(100,116,139,0.35)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}} onClick={()=>setEditing(null)}>
           <div style={{background:'#FFFFFF',border:`1px solid ${S.border}`,borderRadius:16,width:'100%',maxWidth:580}} onClick={e=>e.stopPropagation()}>
