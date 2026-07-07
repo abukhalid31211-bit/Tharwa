@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Plus, Edit, Trash2, X, TrendingUp, TrendingDown, Eye } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Plus, Edit, Trash2, X, TrendingUp, TrendingDown, Eye, Save } from 'lucide-react'
 import { mockMarketAssets, mockTickerItems, mockMarketCategories } from '../adminData'
+import { getSettings, saveSettings } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
@@ -33,23 +34,39 @@ export default function MarketsManager() {
   const [editTicker, setEditTicker] = useState<Ticker|null>(null)
   const [saved, setSaved] = useState(false)
 
+  useEffect(() => {
+    getSettings().then(data => {
+      const s = (data as {settings?: Record<string,string>}).settings || {}
+      try { if (s.market_assets) setAssets(JSON.parse(s.market_assets)) } catch {}
+      try { if (s.market_tickers) setTickers(JSON.parse(s.market_tickers)) } catch {}
+      try { if (s.market_categories) setCategories(JSON.parse(s.market_categories)) } catch {}
+    }).catch(() => {})
+  }, [])
+
+  const saveAll = async (a = assets, t = tickers, c = categories) => {
+    try {
+      await saveSettings({ market_assets: JSON.stringify(a), market_tickers: JSON.stringify(t), market_categories: JSON.stringify(c) })
+      setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
+  }
+
   const cats = ['الكل', ...categories.map(c=>c.name)]
   const filtered = catFilter==='الكل' ? assets : assets.filter(a=>a.category===catFilter)
 
   const saveAsset = (a:Asset) => {
-    setAssets(prev => editing && assets.find(x=>x.id===editing.id) ? prev.map(x=>x.id===a.id?a:x) : [...prev,a])
-    setEditing(null); setSaved(true); setTimeout(()=>setSaved(false),2000)
+    const next = editing && assets.find(x=>x.id===editing.id) ? assets.map(x=>x.id===a.id?a:x) : [...assets,a]
+    setAssets(next); setEditing(null); saveAll(next, tickers, categories)
   }
 
   const saveTicker = (t:Ticker) => {
-    setTickers(prev=>prev.map(x=>x.id===t.id?t:x))
-    setEditTicker(null)
+    const next = tickers.map(x=>x.id===t.id?t:x)
+    setTickers(next); setEditTicker(null); saveAll(assets, next, categories)
   }
 
-  const toggleAsset = (id:number) => setAssets(prev=>prev.map(a=>a.id===id?{...a,visible:!a.visible}:a))
-  const delAsset = (id:number) => setAssets(prev=>prev.filter(a=>a.id!==id))
-  const toggleTicker = (id:number) => setTickers(prev=>prev.map(t=>t.id===id?{...t,visible:!t.visible}:t))
-  const delTicker = (id:number) => setTickers(prev=>prev.filter(t=>t.id!==id))
+  const toggleAsset = (id:number) => { const n=assets.map(a=>a.id===id?{...a,visible:!a.visible}:a); setAssets(n); saveAll(n,tickers,categories) }
+  const delAsset = (id:number) => { const n=assets.filter(a=>a.id!==id); setAssets(n); saveAll(n,tickers,categories) }
+  const toggleTicker = (id:number) => { const n=tickers.map(t=>t.id===id?{...t,visible:!t.visible}:t); setTickers(n); saveAll(assets,n,categories) }
+  const delTicker = (id:number) => { const n=tickers.filter(t=>t.id!==id); setTickers(n); saveAll(assets,n,categories) }
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>

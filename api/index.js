@@ -121,6 +121,20 @@ import { createClient } from '@supabase/supabase-js'
   }
 
   const CLIENT_FIELDS = 'id,name,email,phone,status,account_number,join_date,risk_profile,avatar_url,notes,created_at,membership_level,portfolio_code,initial_investment'
+
+  async function logAudit(decoded, action, target_table, target_id, details = {}) {
+    try {
+      await supabase.from('audit_logs').insert({
+        actor_id: decoded.id,
+        actor_type: decoded.role === 'admin' ? 'admin' : 'sub_admin',
+        actor_email: decoded.email,
+        action, target_table,
+        target_id: target_id ? String(target_id) : null,
+        details,
+      })
+    } catch {}
+  }
+
   async function handleClients(req, res) {
     const decoded = requireAdmin(req, res)
     if (!decoded) return
@@ -148,6 +162,7 @@ import { createClient } from '@supabase/supabase-js'
         const hash = await bcrypt.hash(password, 10)
         const { data, error } = await supabase.from('clients').insert({ name, email: email.toLowerCase(), phone, password_hash: hash, status: status || 'pending', account_number: 'TH' + Date.now().toString().slice(-8), risk_profile: risk_profile || 'moderate', notes, membership_level: membership_level || 'عادي', portfolio_code, initial_investment }).select(CLIENT_FIELDS).single()
         if (error) return res.status(500).json({ error: error.message })
+        logAudit(decoded, 'create_client', 'clients', data.id, { name, email })
         return res.status(201).json({ client: data })
       }
       if (req.method === 'PATCH') {
@@ -157,6 +172,7 @@ import { createClient } from '@supabase/supabase-js'
         if (updates.email) updates.email = updates.email.toLowerCase()
         const { data, error } = await supabase.from('clients').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select(CLIENT_FIELDS).single()
         if (error) return res.status(500).json({ error: error.message })
+        logAudit(decoded, 'update_client', 'clients', id, {})
         return res.json({ client: data })
       }
       if (req.method === 'DELETE') {
@@ -164,6 +180,7 @@ import { createClient } from '@supabase/supabase-js'
         if (!id) return res.status(400).json({ error: 'id مطلوب' })
         const { error } = await supabase.from('clients').delete().eq('id', id)
         if (error) return res.status(500).json({ error: error.message })
+        logAudit(decoded, 'delete_client', 'clients', id, {})
         return res.json({ success: true })
       }
       return res.status(405).json({ error: 'Method not allowed' })
@@ -195,6 +212,7 @@ import { createClient } from '@supabase/supabase-js'
         if (!client_id || !type || !amount) return res.status(400).json({ error: 'client_id و type و amount مطلوبة' })
         const { data, error } = await supabase.from('transactions').insert({ client_id, type, amount, currency, reference: 'TXN-' + Date.now(), notes, status }).select('*').single()
         if (error) return res.status(500).json({ error: error.message })
+        logAudit(decoded, 'create_transaction', 'transactions', data.id, { type, amount, currency })
         return res.status(201).json({ transaction: data })
       }
       if (req.method === 'PATCH') {
@@ -202,6 +220,7 @@ import { createClient } from '@supabase/supabase-js'
         if (!id) return res.status(400).json({ error: 'id مطلوب' })
         const { data, error } = await supabase.from('transactions').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select('*').single()
         if (error) return res.status(500).json({ error: error.message })
+        logAudit(decoded, 'update_transaction', 'transactions', id, { status: updates.status })
         return res.json({ transaction: data })
       }
       if (req.method === 'DELETE') {

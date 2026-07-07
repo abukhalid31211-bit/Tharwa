@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, X, Save, GripVertical, Eye } from 'lucide-react'
 import { mockNavLinks, mockFooterData } from '../adminData'
+import { getSettings, saveSettings } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
@@ -47,7 +48,31 @@ export default function SiteDesign() {
   const [cookieBanner, setCookieBanner] = useState(true)
   const [cookieText, setCookieText] = useState(mockFooterData.cookieBannerText)
 
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),2000) }
+  useEffect(() => {
+    getSettings().then(data => {
+      const s = (data as {settings?: Record<string,string>}).settings || {}
+      try { if (s.site_nav_links) setLinks(JSON.parse(s.site_nav_links)) } catch {}
+      try { if (s.site_footer) setFooter(JSON.parse(s.site_footer)) } catch {}
+      try { if (s.site_float_whatsapp !== undefined) setFloatWhatsapp(s.site_float_whatsapp === 'true') } catch {}
+      try { if (s.site_float_backtotop !== undefined) setFloatBackToTop(s.site_float_backtotop === 'true') } catch {}
+      try { if (s.site_cookie_banner !== undefined) setCookieBanner(s.site_cookie_banner === 'true') } catch {}
+      try { if (s.site_cookie_text) setCookieText(s.site_cookie_text) } catch {}
+    }).catch(() => {})
+  }, [])
+
+  const save = async () => {
+    try {
+      await saveSettings({
+        site_nav_links: JSON.stringify(links),
+        site_footer: JSON.stringify(footer),
+        site_float_whatsapp: String(floatWhatsapp),
+        site_float_backtotop: String(floatBackToTop),
+        site_cookie_banner: String(cookieBanner),
+        site_cookie_text: cookieText,
+      })
+      setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
+  }
 
   const saveLink = (l:NavLink) => {
     if (isNewLink) setLinks(prev=>[...prev,l])

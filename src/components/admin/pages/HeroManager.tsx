@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Save, Eye, RefreshCw } from 'lucide-react'
 import { mockHeroData, mockTrustBadges, mockSiteStats } from '../adminData'
-import { saveSettings } from '../../../lib/api'
+import { saveSettings, getSettings } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
@@ -43,6 +43,15 @@ export default function HeroManager() {
   const [stats, setStats] = useState([...mockSiteStats])
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState<'hero'|'badges'|'stats'>('hero')
+
+  useEffect(() => {
+    getSettings().then(data => {
+      const s = (data as {settings?: Record<string,string>}).settings || {}
+      try { if (s.hero_data) setHero(JSON.parse(s.hero_data)) } catch {}
+      try { if (s.trust_badges) setBadges(JSON.parse(s.trust_badges)) } catch {}
+      try { if (s.site_stats) setStats(JSON.parse(s.site_stats)) } catch {}
+    }).catch(() => {})
+  }, [])
 
   const save = async () => {
     try {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { STOCKS_SA_LIST, STOCKS_GLOBAL_LIST, CRYPTO_LIST, FOREX_PAIRS_LIST, METALS_LIST, OIL_TYPES_LIST, BANKS_SA_LIST } from '../adminData'
-import { Plus, Trash2, ChevronDown, ChevronUp, Check, Upload, Eye, EyeOff, RefreshCw } from 'lucide-react'
-import { getClients, getPortfolios, createPortfolio, deletePortfolio, type Client, type Portfolio } from '../../../lib/api'
+import { Plus, Trash2, ChevronDown, ChevronUp, Check, Upload, Eye, EyeOff, RefreshCw, Pencil } from 'lucide-react'
+import { getClients, getPortfolios, createPortfolio, updatePortfolio, deletePortfolio, type Client, type Portfolio } from '../../../lib/api'
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -216,6 +216,7 @@ export default function Portfolios() {
   const [clients, setClients] = useState<Client[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [deletePortfolioId, setDeletePortfolioId] = useState<string|null>(null)
+  const [editingPortfolioId, setEditingPortfolioId] = useState<string|null>(null)
   const [portfolioToast, setPortfolioToast] = useState<string|null>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -236,6 +237,29 @@ export default function Portfolios() {
   const handleDeletePortfolio = async (id: string) => {
     try { await deletePortfolio(id); setPortfoliosList(p=>p.filter(x=>x.id!==id)); setDeletePortfolioId(null); showPToast('🗑️ تم حذف المحفظة') }
     catch { showPToast('⚠️ فشل الحذف') }
+  }
+
+  const loadPortfolioForEdit = (p: Portfolio) => {
+    const pd = p.portfolio_data as Record<string,unknown>|undefined
+    if (pd?.personal) setPersonalFS(pd.personal as FS)
+    if (pd?.financial) setFinancialFS(pd.financial as FS)
+    if (pd?.banking) setBankingFS(pd.banking as FS)
+    if (pd?.docs) setDocsFS(pd.docs as FS)
+    if (pd?.notes) setNotesFS(pd.notes as FS)
+    if (pd?.sectionNotes) setSectionNotes(pd.sectionNotes as typeof sectionNotes)
+    const inv = pd?.investments as Record<string,unknown>|undefined
+    if (inv) {
+      if (Array.isArray(inv.saStocks)) setSaStocks(inv.saStocks as StockRow[])
+      if (Array.isArray(inv.gulfStocks)) setGulfStocks(inv.gulfStocks as StockRow[])
+      if (Array.isArray(inv.globalStocks)) setGlobalStocks(inv.globalStocks as StockRow[])
+      if (Array.isArray(inv.cryptoRows)) setCryptoRows(inv.cryptoRows as CryptoRow[])
+      if (Array.isArray(inv.forexRows)) setForexRows(inv.forexRows as ForexRow[])
+      if (Array.isArray(inv.metalRows)) setMetalRows(inv.metalRows as MetalRow[])
+      if (Array.isArray(inv.oilRows)) setOilRows(inv.oilRows as OilRow[])
+      if (inv.visible) setInvestVisible(inv.visible as Record<string,boolean>)
+    }
+    setEditingPortfolioId(p.id)
+    setMainTab('create')
   }
 
   const clientOptions = clients.map(c => `${c.id} — ${c.name}`)
@@ -326,8 +350,13 @@ export default function Portfolios() {
         sectionNotes,
       }
       const name = personalFS['portfolioCode']?.value || `محفظة ${personalFS['fullName']?.value || 'عميل'}`
-      await createPortfolio({ client_id: selectedClientId, name, portfolio_data })
+      if (editingPortfolioId) {
+        await updatePortfolio(editingPortfolioId, { name, portfolio_data })
+      } else {
+        await createPortfolio({ client_id: selectedClientId, name, portfolio_data })
+      }
       setSaved(true)
+      setEditingPortfolioId(null)
       await loadData()
       setTimeout(() => { setSaved(false); setMainTab('list') }, 2000)
     } catch (err: unknown) {
@@ -361,7 +390,7 @@ export default function Portfolios() {
               {m === 'grid' ? 'بطاقات' : 'جدول'}
             </button>
           ))}
-          <button onClick={() => setMainTab(mainTab === 'list' ? 'create' : 'list')}
+          <button onClick={() => { if (mainTab === 'create') setEditingPortfolioId(null); setMainTab(mainTab === 'list' ? 'create' : 'list') }}
             style={{ display:'flex', alignItems:'center', gap:6, padding:'9px 16px', background:mainTab==='create'?'rgba(14,165,233,0.1)':'linear-gradient(135deg,#0EA5E9,#38BDF8)', border:mainTab==='create'?'1px solid rgba(14,165,233,0.3)':'none', borderRadius:8, color:mainTab==='create'?'#0EA5E9':'#FFF', fontWeight:700, fontSize:'0.82rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif" }}>
             {mainTab === 'create' ? '← قائمة المحافظ' : <><Plus size={14}/> إنشاء محفظة جديدة</>}
           </button>
@@ -410,9 +439,14 @@ export default function Portfolios() {
                           <div style={{ fontSize:'0.65rem', color:'#94A3B8', fontFamily:'monospace' }}>{p.name}</div>
                         </div>
                       </div>
-                      <button onClick={() => setDeletePortfolioId(p.id)} style={{ width:22, height:22, background:'rgba(255,69,96,0.1)', border:'1px solid rgba(255,69,96,0.2)', borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#FF4560', padding:0 }}>
-                        <Trash2 size={11}/>
-                      </button>
+                      <div style={{ display:'flex', gap:4 }}>
+                        <button onClick={() => loadPortfolioForEdit(p)} style={{ width:22, height:22, background:'rgba(14,165,233,0.1)', border:'1px solid rgba(14,165,233,0.2)', borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#0EA5E9', padding:0 }}>
+                          <Pencil size={11}/>
+                        </button>
+                        <button onClick={() => setDeletePortfolioId(p.id)} style={{ width:22, height:22, background:'rgba(255,69,96,0.1)', border:'1px solid rgba(255,69,96,0.2)', borderRadius:5, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', color:'#FF4560', padding:0 }}>
+                          <Trash2 size={11}/>
+                        </button>
+                      </div>
                     </div>
                     <div style={{ padding:'12px 16px' }}>
                       <div style={{ fontSize:'0.7rem', color:'#64748B' }}>{p.currency || '—'}</div>
@@ -440,9 +474,14 @@ export default function Portfolios() {
                       <td style={{ padding:'12px 14px', fontSize:'0.8rem', color:'#475569', borderBottom:'1px solid rgba(203,213,225,0.5)' }}>{p.currency||'—'}</td>
                       <td style={{ padding:'12px 14px', fontSize:'0.72rem', color:'#64748B', borderBottom:'1px solid rgba(203,213,225,0.5)' }}>{new Date(p.created_at).toLocaleDateString('ar-SA')}</td>
                       <td style={{ padding:'12px 14px', borderBottom:'1px solid rgba(203,213,225,0.5)' }}>
-                        <button onClick={() => setDeletePortfolioId(p.id)} style={{ padding:'5px 10px', background:'rgba(255,69,96,0.08)', border:'1px solid rgba(255,69,96,0.2)', borderRadius:6, color:'#FF4560', fontSize:'0.7rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", display:'flex', alignItems:'center', gap:4 }}>
-                          <Trash2 size={11}/> حذف
-                        </button>
+                        <div style={{ display:'flex', gap:4 }}>
+                          <button onClick={() => loadPortfolioForEdit(p)} style={{ padding:'5px 10px', background:'rgba(14,165,233,0.08)', border:'1px solid rgba(14,165,233,0.2)', borderRadius:6, color:'#0EA5E9', fontSize:'0.7rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", display:'flex', alignItems:'center', gap:4 }}>
+                            <Pencil size={11}/> تعديل
+                          </button>
+                          <button onClick={() => setDeletePortfolioId(p.id)} style={{ padding:'5px 10px', background:'rgba(255,69,96,0.08)', border:'1px solid rgba(255,69,96,0.2)', borderRadius:6, color:'#FF4560', fontSize:'0.7rem', cursor:'pointer', fontFamily:"'Cairo',sans-serif", display:'flex', alignItems:'center', gap:4 }}>
+                            <Trash2 size={11}/> حذف
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

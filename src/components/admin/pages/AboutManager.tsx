@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, X, Save, Eye } from 'lucide-react'
 import { mockTimelineEvents, mockCoreValues, mockWhyChooseUs, mockHowItWorks, mockAboutHeroStats } from '../adminData'
+import { getSettings, saveSettings } from '../../../lib/api'
 
 const S = { bg:'#F1F5F9',card:'#FFFFFF',border:'#E2E8F0',gold:'#0EA5E9',text:'#1E293B',muted:'#64748B',green:'#059669',red:'#EF4444' }
 
@@ -52,7 +53,29 @@ export default function AboutManager() {
   const [isNew, setIsNew] = useState(false)
   const [saved, setSaved] = useState(false)
 
-  const save = () => { setSaved(true); setTimeout(()=>setSaved(false),2000) }
+  useEffect(() => {
+    getSettings().then(data => {
+      const s = (data as {settings?: Record<string,string>}).settings || {}
+      try { if (s.about_timeline) setTimeline(JSON.parse(s.about_timeline)) } catch {}
+      try { if (s.about_values) setValues(JSON.parse(s.about_values)) } catch {}
+      try { if (s.about_features) setFeatures(JSON.parse(s.about_features)) } catch {}
+      try { if (s.about_steps) setSteps(JSON.parse(s.about_steps)) } catch {}
+      try { if (s.about_hero_stats) setHeroStats(JSON.parse(s.about_hero_stats)) } catch {}
+    }).catch(() => {})
+  }, [])
+
+  const save = async () => {
+    try {
+      await saveSettings({
+        about_timeline: JSON.stringify(timeline),
+        about_values: JSON.stringify(values),
+        about_features: JSON.stringify(features),
+        about_steps: JSON.stringify(steps),
+        about_hero_stats: JSON.stringify(heroStats),
+      })
+      setSaved(true); setTimeout(() => setSaved(false), 2000)
+    } catch { alert('حدث خطأ أثناء الحفظ') }
+  }
 
   const openModal = (type:ModalItem['type'], item:unknown, isNewItem=false) => {
     setIsNew(isNewItem)
